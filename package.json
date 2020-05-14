@@ -5,7 +5,7 @@
   "main": "index.js",
   "types": "index.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "ava"
   },
   "keywords": [
     "react",
@@ -16,9 +16,30 @@
     "audio",
     "screen"
   ],
+  "files": [
+    "index.js",
+    "index.d.ts"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wmik/cjs.git"
+  },
+  "bugs": "https://github.com/wmik/cjs/issues",
   "author": "wmik <contact@wmik.me>",
   "license": "MIT",
-  "devDependencies": {
+  "peerDependencies": {
     "react": "^16.13.1"
+  },
+  "devDependencies": {
+    "@testing-library/react-hooks": "^3.2.1",
+    "ava": "^3.8.2",
+    "react": "^16.13.1",
+    "react-test-renderer": "^16.13.1",
+    "window": "^4.2.7"
+  },
+  "ava": {
+    "require": [
+      "./setup-window.js"
+    ]
   }
 }
