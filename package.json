@@ -1,6 +1,6 @@
 {
   "name": "@wmik/use-media-recorder",
-  "version": "0.0.0-development",
+  "version": "1.0.0-alpha.1",
   "description": "React based hooks to utilize the media recorder api for audio, video and screen recording",
   "main": "index.js",
   "types": "index.d.ts",
@@ -22,9 +22,9 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/wmik/cjs.git"
+    "url": "https://github.com/wmik/use-media-recorder.git"
   },
-  "bugs": "https://github.com/wmik/cjs/issues",
+  "bugs": "https://github.com/wmik/use-media-recorder/issues",
   "author": "wmik <contact@wmik.me>",
   "license": "MIT",
   "peerDependencies": {
