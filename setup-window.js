@@ -21,7 +21,10 @@ MediaRecorder.prototype = {
   stop() {},
   stream: '',
   videoBitsPerSecond: '',
-  constructor: MediaRecorder
+  constructor: MediaRecorder,
+  addEventListener() {},
+  removeEventListener() {},
+  dispatchEvent() {}
 };
 
 global.window = new Window();
