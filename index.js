@@ -1,7 +1,7 @@
 const React = require('react');
 
 /**
- * Checks whether the argument is an object
+ * Checks whether the argument is a valid object i.e (key-value pair).
  * @param {any} o
  */
 function isObject(o) {
@@ -9,7 +9,7 @@ function isObject(o) {
 }
 
 /**
- * Checks whether constraints are valid
+ * Checks whether media type(audio/video) constraints are valid.
  * @param {MediaStreamConstraints} mediaType
  */
 function validateMediaTrackConstraints(mediaType) {
@@ -29,43 +29,40 @@ function validateMediaTrackConstraints(mediaType) {
 const noop = () => {};
 
 /**
- * @typedef StopCallbackParams
- * @type {object}
- * @property {Blob} blob
- * @property {string} url
- *
- * @callback StopCallback
- * @param {StopCallbackParams}
+ * @callback Callback
+ * @param {Blob} blob
  *
  * @callback ErrorCallback
- * @param {Error}
+ * @param {?Error} error
  *
  * @typedef MediaRecorderProps
- * @type {object}
- * @property {BlobPropertyBag} blobOptions
- * @property {boolean} recordScreen
- * @property {function} onStart
- * @property {StopCallback} onStop
- * @property {ErrorCallback} onError
- * @property {object} mediaRecorderOptions
+ * @type {Object}
+ * @property {BlobPropertyBag} [blobOptions]
+ * @property {Boolean} [recordScreen]
+ * @property {Function} [onStart]
+ * @property {Callback} [onStop]
+ * @property {Callback} [onDataAvailable]
+ * @property {ErrorCallback} [onError]
+ * @property {Object} [mediaRecorderOptions]
  * @property {MediaStreamConstraints} mediaStreamConstraints
  *
  * @typedef MediaRecorderHookOptions
- * @type {object}
+ * @type {Object}
  * @property {Error} error
- * @property {string} status
+ * @property {('idle'|'acquiring_media'|'ready'|'recording'|'stopping'|'stopped'|'failed')} status
  * @property {Blob} mediaBlob
- * @property {string} mediaBlobUrl
- * @property {boolean} isAudioMuted
- * @property {function} stopRecording,
- * @property {function} getMediaStream,
- * @property {function} startRecording,
- * @property {function} pauseRecording,
- * @property {function} resumeRecording,
- * @property {function} muteAudio
- * @property {function} unMuteAudio
+ * @property {Boolean} isAudioMuted
+ * @property {Function} stopRecording,
+ * @property {Function} getMediaStream,
+ * @property {Function} clearMediaStream,
+ * @property {Function} startRecording,
+ * @property {Function} pauseRecording,
+ * @property {Function} resumeRecording,
+ * @property {Function} muteAudio
+ * @property {Function} unMuteAudio
  * @property {MediaStream} liveStream
  *
+ * Creates a custom media recorder object using the MediaRecorder API.
  * @param {MediaRecorderProps}
  * @returns {MediaRecorderHookOptions}
  */
@@ -76,15 +73,15 @@ function useMediaRecorder({
   onStart = noop,
   onError = noop,
   mediaRecorderOptions,
+  onDataAvailable = noop,
   mediaStreamConstraints = {}
-} = {}) {
+}) {
   let mediaChunks = React.useRef([]);
   let mediaStream = React.useRef(null);
   let mediaRecorder = React.useRef(null);
   let [error, setError] = React.useState(null);
   let [status, setStatus] = React.useState('idle');
   let [mediaBlob, setMediaBlob] = React.useState(null);
-  let [mediaBlobUrl, setMediaBlobUrl] = React.useState(null);
   let [isAudioMuted, setIsAudioMuted] = React.useState(false);
 
   async function getMediaStream() {
@@ -125,6 +122,13 @@ function useMediaRecorder({
     }
   }
 
+  function clearMediaStream() {
+    if (mediaStream.current) {
+      mediaStream.current.getTracks().forEach(track => track.stop());
+      mediaStream.current = null;
+    }
+  }
+
   async function startRecording() {
     if (error) {
       setError(null);
@@ -155,6 +159,7 @@ function useMediaRecorder({
     if (e.data.size) {
       mediaChunks.current.push(e.data);
     }
+    onDataAvailable(e.data);
   }
 
   function handleStop() {
@@ -164,12 +169,10 @@ function useMediaRecorder({
       blobOptions
     );
     let blob = new Blob(mediaChunks.current, blobPropertyBag);
-    let url = URL.createObjectURL(blob);
 
-    setStatus('stopped');
-    setMediaBlobUrl(url);
     setMediaBlob(blob);
-    onStop({ blob, url });
+    setStatus('stopped');
+    onStop(blob);
   }
 
   function handleError(e) {
@@ -204,7 +207,6 @@ function useMediaRecorder({
     if (mediaRecorder.current) {
       setStatus('stopping');
       mediaRecorder.current.stop();
-      mediaStream.current.getTracks().forEach(track => track.stop());
       // not sure whether to place clean up in useEffect?
       // If placed in useEffect the handler functions become dependencies of useEffect
       mediaRecorder.current.removeEventListener(
@@ -213,21 +215,22 @@ function useMediaRecorder({
       );
       mediaRecorder.current.removeEventListener('stop', handleStop);
       mediaRecorder.current.removeEventListener('error', handleError);
-      mediaRecorder.current = undefined;
-      mediaStream.current = undefined;
-      mediaChunks.current = [];
+      mediaRecorder.current = null;
+      clearMediaStream();
     }
   }
 
   React.useEffect(() => {
     if (!window.MediaRecorder) {
-      throw new Error(
+      throw new ReferenceError(
         'MediaRecorder is not supported in this browser. Please ensure that you are running the latest version of chrome/firefox/edge.'
       );
     }
 
     if (recordScreen && !window.navigator.mediaDevices.getDisplayMedia) {
-      throw new Error('This browser does not support screen capturing');
+      throw new ReferenceError(
+        'This browser does not support screen capturing.'
+      );
     }
 
     if (isObject(mediaStreamConstraints.video)) {
@@ -251,13 +254,13 @@ function useMediaRecorder({
     error,
     status,
     mediaBlob,
-    mediaBlobUrl,
     isAudioMuted,
     stopRecording,
     getMediaStream,
     startRecording,
     pauseRecording,
     resumeRecording,
+    clearMediaStream,
     muteAudio: () => muteAudio(true),
     unMuteAudio: () => muteAudio(false),
     get liveStream() {

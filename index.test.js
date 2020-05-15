@@ -9,9 +9,9 @@ test('hook options', t => {
     isAudioMuted,
     liveStream,
     mediaBlob,
-    mediaBlobUrl,
     status,
     getMediaStream,
+    clearMediaStream,
     muteAudio,
     unMuteAudio,
     startRecording,
@@ -24,9 +24,9 @@ test('hook options', t => {
   t.is(error, null);
   t.is(liveStream, null);
   t.is(mediaBlob, null);
-  t.is(mediaBlobUrl, null);
   t.false(isAudioMuted);
   t.true(typeof getMediaStream === 'function');
+  t.true(typeof clearMediaStream === 'function');
   t.true(typeof muteAudio === 'function');
   t.true(typeof unMuteAudio === 'function');
   t.true(typeof startRecording === 'function');

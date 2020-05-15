@@ -1,11 +1,13 @@
 # use-media-recorder
 
-> React based hooks to utilize the media recorder api for audio, video and screen recording.
+> React based hooks to utilize the [MediaRecorder API](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder/MediaRecorder) for audio, video and screen recording.
 
 ## Features
-- 🖥️ Screen recording
+- 📦 Lightweight
+- 🛠️ Customizable
 - 🎥 Video recording
 - 🎤 Audio recording
+- 🖥️ Screen recording
 
 ## Installation
 > `npm install @wmik/use-media-recorder`
@@ -15,11 +17,30 @@
 import React from 'react';
 import useMediaRecorder from '@wmik/use-media-recorder';
 
+function Player({ srcBlob, audio }) {
+  if (!srcBlob) {
+    return null;
+  }
+
+  if (audio) {
+    return <audio src={URL.createObjectURL(srcBlob)} controls />;
+  }
+
+  return (
+    <video
+      src={URL.createObjectURL(srcBlob)}
+      width={520}
+      height={480}
+      controls
+    />
+  );
+}
+
 function ScreenRecorderApp() {
   let {
     error,
     status,
-    mediaBlobUrl,
+    mediaBlob,
     stopRecording,
     getMediaStream,
     startRecording
@@ -56,23 +77,21 @@ function ScreenRecorderApp() {
           Stop recording
         </button>
       </section>
-      <video
-        src={mediaBlobUrl}
-        width={520}
-        height={480}
-        controls={status === 'stopped'}
-      />
+      <Player srcBlob={mediaBlob} />
     </article>
   );
 }
 ```
 
+## Demo
+[Live demo example]()
+
 ## API
 
 ### _`useMediaRecorder` (Default export)_
-Creates a media recorder object.
+Creates a custom media recorder object using the [MediaRecorder API](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder/MediaRecorder).
 
-### `Parameters` (MediaRecorderProps)
+#### `Parameters` (MediaRecorderProps)
 |Property|Type|Description
 |-|-|-|
 |blobOptions|`BlobPropertyBag`|Options used for creating a [`Blob`](https://developer.mozilla.org/en-US/docs/Web/API/Blob/Blob) object.
@@ -80,19 +99,22 @@ Creates a media recorder object.
 |onStart|`function`|Callback to run when recording starts.
 |onStop|`function`|Callback to run when recording stops. Accepts an object parameter with properties `blob` and `url`.
 |onError|`function`|Callback to run when an error occurs while recording. Accepts an error object as a parameter.
+|onDataAvailable|`function`|Callback to run when recording data exists.
 |mediaRecorderOptions|`object`|Options used for creating [`MediaRecorder`](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder/MediaRecorder) object.
-|mediaStreamConstraints|[`MediaStreamConstraints`](https://developer.mozilla.org/en-US/docs/Web/API/MediaStreamConstraints)|Options used for creating a MediaStream object from [`getDisplayMedia`](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getDisplayMedia) and [`getUserMedia`](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia).
+|mediaStreamConstraints<b>*</b>|[`MediaStreamConstraints`](https://developer.mozilla.org/en-US/docs/Web/API/MediaStreamConstraints)|Options used for creating a MediaStream object from [`getDisplayMedia`](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getDisplayMedia) and [`getUserMedia`](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia).
 
-### `Returns` (MediaRecorderHookOptions)
+> _**NOTE**: **\*** means it is required_
+
+#### `Returns` (MediaRecorderHookOptions)
 |Property|Type|Description
 |-|-|-|
-|error|`Error`|Detailed error information about an operation failure.
-|status|`string`|Current state of recorder.
+|error|`Error`|Information about an operation failure. [Possible exceptions](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia)
+|status|`string`|Current state of recorder. One of `idle`, `acquiring_media`, `ready`, `recording`, `stopping`, `stopped`, `failed`.
 |mediaBlob|`Blob`|Raw media data.
-|mediaBlobUrl|`string`|URL representation of blob. Used as a media source in DOM elements e.g `video.src/audio.src`
 |isAudioMuted|`boolean`|Indicated whether audio is active/inactive.
 |stopRecording|`function`|End a recording.
 |getMediaStream|`function`|Request for a media source. Camera or mic or screen access.
+|clearMediaStream|`function`|Resets the media stream object to `null`.
 |startRecording|`function`|Begin a recording.
 |pauseRecording|`function`|Stop without ending a recording allowing the recording to continue later.
 |resumeRecording|`function`|Continue a recording from a previous pause.
@@ -121,6 +143,9 @@ function LiveStreamPreview({ stream }) {
 
 <LiveStream stream={liveStream} />
 ```
+
+## Related
+- [`react-media-recorder`](https://github.com/0x006F/react-media-recorder)
 
 ## License
 MIT &copy;2020
