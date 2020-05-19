@@ -13,7 +13,7 @@ export interface MediaRecorderProps {
   onStart?: () => void;
   onStop?: (blob: Blob) => void;
   onDataAvailable?: (blob: Blob) => void;
-  onError?: () => void;
+  onError?: (e: Error) => void;
   mediaRecorderOptions?: object;
   mediaStreamConstraints: MediaStreamConstraints;
 }

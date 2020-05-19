@@ -33,7 +33,7 @@ const noop = () => {};
  * @param {Blob} blob
  *
  * @callback ErrorCallback
- * @param {?Error} error
+ * @param {Error} error
  *
  * @typedef MediaRecorderProps
  * @type {Object}
@@ -48,9 +48,9 @@ const noop = () => {};
  *
  * @typedef MediaRecorderHookOptions
  * @type {Object}
- * @property {Error} error
+ * @property {?Error} error
  * @property {('idle'|'acquiring_media'|'ready'|'recording'|'stopping'|'stopped'|'failed')} status
- * @property {Blob} mediaBlob
+ * @property {?Blob} mediaBlob
  * @property {Boolean} isAudioMuted
  * @property {Function} stopRecording,
  * @property {Function} getMediaStream,
@@ -60,7 +60,7 @@ const noop = () => {};
  * @property {Function} resumeRecording,
  * @property {Function} muteAudio
  * @property {Function} unMuteAudio
- * @property {MediaStream} liveStream
+ * @property {?MediaStream} liveStream
  *
  * Creates a custom media recorder object using the MediaRecorder API.
  * @param {MediaRecorderProps}

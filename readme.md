@@ -97,7 +97,7 @@ Creates a custom media recorder object using the [MediaRecorder API](https://dev
 |blobOptions|`BlobPropertyBag`|Options used for creating a [`Blob`](https://developer.mozilla.org/en-US/docs/Web/API/Blob/Blob) object.
 |recordScreen|`boolean`|Enable/disable screen capture.
 |onStart|`function`|Callback to run when recording starts.
-|onStop|`function`|Callback to run when recording stops. Accepts an object parameter with properties `blob` and `url`.
+|onStop|`function`|Callback to run when recording stops. Accepts a [`Blob`](https://developer.mozilla.org/en-US/docs/Web/API/Blob/Blob) object as a parameter.
 |onError|`function`|Callback to run when an error occurs while recording. Accepts an error object as a parameter.
 |onDataAvailable|`function`|Callback to run when recording data exists.
 |mediaRecorderOptions|`object`|Options used for creating [`MediaRecorder`](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder/MediaRecorder) object.
@@ -113,7 +113,7 @@ Creates a custom media recorder object using the [MediaRecorder API](https://dev
 |mediaBlob|`Blob`|Raw media data.
 |isAudioMuted|`boolean`|Indicated whether audio is active/inactive.
 |stopRecording|`function`|End a recording.
-|getMediaStream|`function`|Request for a media source. Camera or mic or screen access.
+|getMediaStream|`function`|Request for a media source. Camera, mic and/or screen access.
 |clearMediaStream|`function`|Resets the media stream object to `null`.
 |startRecording|`function`|Begin a recording.
 |pauseRecording|`function`|Stop without ending a recording allowing the recording to continue later.
@@ -141,7 +141,7 @@ function LiveStreamPreview({ stream }) {
   return <video ref={videoPreviewRef} width={520} height={480} autoPlay />;
 }
 
-<LiveStream stream={liveStream} />
+<LiveStreamPreview stream={liveStream} />
 ```
 
 ## Related
