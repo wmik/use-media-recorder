@@ -3,11 +3,10 @@
 > React based hooks to utilize the [MediaRecorder API](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder/MediaRecorder) for audio, video and screen recording.
 
 ## Features
-- 📦 Lightweight
-- 🛠️ Customizable
-- 🎥 Video recording
-- 🎤 Audio recording
-- 🖥️ Screen recording
+- 👀 Familiar API - Extends the MediaRecorder/MediaStream API with minimal abstraction making it easy to use.
+- 🔴 Media recording - Supports audio 🎤, video 🎥 & screen 🖥️ recording.
+- 🎛️ Configurable - Adjust settings to match your recording requirements.
+- 💅 Headless - Build your own custom user interface to fit your style.
 
 ## Installation
 > `npm install @wmik/use-media-recorder`
@@ -46,7 +45,7 @@ function ScreenRecorderApp() {
     startRecording
   } = useMediaRecorder({
     recordScreen: true,
-    blobOptions: { type: 'video/mp4' },
+    blobOptions: { type: 'video/webm' },
     mediaStreamConstraints: { audio: true, video: true }
   });
 
@@ -84,7 +83,7 @@ function ScreenRecorderApp() {
 ```
 
 ## Demo
-[Live demo example]()
+[Live demo example](https://codesandbox.io/s/screen-recorder-nmmrf?file=/src/App.js)
 
 ## API
 

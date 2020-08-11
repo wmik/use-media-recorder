@@ -34,7 +34,7 @@ export interface MediaRecorderHookOptions {
   liveStream: MediaStream;
 }
 
-declare function useMediaRecorder<T>(
+declare function useMediaRecorder(
   options: MediaRecorderProps
 ): MediaRecorderHookOptions;
 
