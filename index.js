@@ -137,6 +137,8 @@ function useMediaRecorder({
     if (!mediaStream.current) {
       await getMediaStream();
     }
+    
+    mediaChunks.current = []
 
     if (mediaStream.current) {
       mediaRecorder.current = new MediaRecorder(
