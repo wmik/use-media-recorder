@@ -26,7 +26,7 @@ export interface MediaRecorderHookOptions {
   stopRecording: () => void;
   getMediaStream: () => void;
   clearMediaStream: () => void;
-  startRecording: () => void;
+  startRecording: (timeSlice?: number) => void;
   pauseRecording: () => void;
   resumeRecording: () => void;
   muteAudio: () => void;

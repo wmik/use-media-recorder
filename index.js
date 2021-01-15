@@ -129,7 +129,7 @@ function useMediaRecorder({
     }
   }
 
-  async function startRecording() {
+  async function startRecording(timeSlice) {
     if (error) {
       setError(null);
     }
@@ -151,7 +151,7 @@ function useMediaRecorder({
       );
       mediaRecorder.current.addEventListener('stop', handleStop);
       mediaRecorder.current.addEventListener('error', handleError);
-      mediaRecorder.current.start();
+      mediaRecorder.current.start(timeSlice);
       setStatus('recording');
       onStart();
     }
