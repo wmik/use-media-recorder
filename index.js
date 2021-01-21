@@ -13,7 +13,8 @@ function isObject(o) {
  * @param {MediaStreamConstraints} mediaType
  */
 function validateMediaTrackConstraints(mediaType) {
-  let supportedMediaConstraints = navigator.mediaDevices.getSupportedConstraints();
+  let supportedMediaConstraints = navigator.mediaDevices
+      && navigator.mediaDevices.getSupportedConstraints() || {};
   let unSupportedMediaConstraints = Object.keys(mediaType).filter(
     constraint => !supportedMediaConstraints[constraint]
   );
