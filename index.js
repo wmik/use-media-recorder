@@ -13,8 +13,17 @@ function isObject(o) {
  * @param {MediaStreamConstraints} mediaType
  */
 function validateMediaTrackConstraints(mediaType) {
-  let supportedMediaConstraints = navigator.mediaDevices
-      && navigator.mediaDevices.getSupportedConstraints() || {};
+  let supportedMediaConstraints = null;
+
+  if (navigator.mediaDevices) {
+    supportedMediaConstraints =
+      navigator.mediaDevices.getSupportedConstraints();
+  }
+
+  if (supportedConstrainsts === null) {
+    return;
+  }
+
   let unSupportedMediaConstraints = Object.keys(mediaType).filter(
     constraint => !supportedMediaConstraints[constraint]
   );
@@ -50,7 +59,7 @@ const noop = () => {};
  * @typedef MediaRecorderHookOptions
  * @type {Object}
  * @property {?Error} error
- * @property {('idle'|'acquiring_media'|'ready'|'recording'|'stopping'|'stopped'|'failed')} status
+ * @property {('idle'|'acquiring_media'|'ready'|'recording'|'paused'|'stopping'|'stopped'|'failed')} status
  * @property {?Blob} mediaBlob
  * @property {Boolean} isAudioMuted
  * @property {Function} stopRecording,
@@ -138,8 +147,8 @@ function useMediaRecorder({
     if (!mediaStream.current) {
       await getMediaStream();
     }
-    
-    mediaChunks.current = []
+
+    mediaChunks.current = [];
 
     if (mediaStream.current) {
       mediaRecorder.current = new MediaRecorder(
@@ -197,12 +206,14 @@ function useMediaRecorder({
   function pauseRecording() {
     if (mediaRecorder.current && mediaRecorder.current.state === 'recording') {
       mediaRecorder.current.pause();
+      setStatus('paused');
     }
   }
 
   function resumeRecording() {
     if (mediaRecorder.current && mediaRecorder.current.state === 'paused') {
       mediaRecorder.current.resume();
+      setStatus('recording');
     }
   }
 

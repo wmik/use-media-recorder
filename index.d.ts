@@ -3,6 +3,7 @@ export type Status =
   | 'acquiring_media'
   | 'ready'
   | 'recording'
+  | 'paused'
   | 'stopping'
   | 'stopped'
   | 'failed';
