@@ -25,7 +25,7 @@ export interface MediaRecorderHookOptions {
   mediaBlob: Blob | null;
   isAudioMuted: boolean;
   stopRecording: () => void;
-  getMediaStream: () => void;
+  getMediaStream: () => Promise<void>;
   clearMediaStream: () => void;
   startRecording: (timeSlice?: number) => void;
   pauseRecording: () => void;
