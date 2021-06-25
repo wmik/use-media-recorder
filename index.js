@@ -20,7 +20,7 @@ function validateMediaTrackConstraints(mediaType) {
       navigator.mediaDevices.getSupportedConstraints();
   }
 
-  if (supportedConstrainsts === null) {
+  if (supportedMediaConstraints === null) {
     return;
   }
 
