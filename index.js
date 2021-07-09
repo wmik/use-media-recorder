@@ -49,6 +49,7 @@ const noop = () => {};
  * @type {Object}
  * @property {BlobPropertyBag} [blobOptions]
  * @property {Boolean} [recordScreen]
+ * @property {MediaStream} customMediaStream
  * @property {Function} [onStart]
  * @property {Callback} [onStop]
  * @property {Callback} [onDataAvailable]
@@ -79,6 +80,7 @@ const noop = () => {};
 function useMediaRecorder({
   blobOptions,
   recordScreen,
+  customMediaStream,
   onStop = noop,
   onStart = noop,
   onError = noop,
@@ -100,7 +102,10 @@ function useMediaRecorder({
     }
 
     setStatus('acquiring_media');
-
+    if(customMediaStream) {
+      mediaStream.current = customMediaStream;
+      return
+    }
     try {
       let stream;
 
