@@ -89,14 +89,14 @@ function useMediaRecorder({
   let mediaChunks = React.useRef([]);
   let mediaStream = React.useRef(null);
   let mediaRecorder = React.useRef(null);
-  let [error, setError] = React.useState(null);
   let [status, setStatus] = React.useState('idle');
-  let [mediaBlob, setMediaBlob] = React.useState(null);
-  let [isAudioMuted, setIsAudioMuted] = React.useState(false);
+  let [errorCache, cacheError] = React.useState(null);
+  let [mediaBlobCache, cacheMediaBlob] = React.useState(null);
+  let [isAudioMutedCache, cacheIsAudioMuted] = React.useState(false);
 
   async function getMediaStream() {
-    if (error) {
-      setError(null);
+    if (errorCache) {
+      cacheError(null);
     }
 
     setStatus('acquiring_media');
@@ -127,7 +127,7 @@ function useMediaRecorder({
       mediaStream.current = stream;
       setStatus('ready');
     } catch (err) {
-      setError(err);
+      cacheError(err);
       setStatus('failed');
     }
   }
@@ -140,8 +140,8 @@ function useMediaRecorder({
   }
 
   async function startRecording(timeSlice) {
-    if (error) {
-      setError(null);
+    if (errorCache) {
+      cacheError(null);
     }
 
     if (!mediaStream.current) {
@@ -182,19 +182,19 @@ function useMediaRecorder({
     );
     let blob = new Blob(mediaChunks.current, blobPropertyBag);
 
-    setMediaBlob(blob);
+    cacheMediaBlob(blob);
     setStatus('stopped');
     onStop(blob);
   }
 
   function handleError(e) {
-    setError(e.error);
+    cacheError(e.error);
     setStatus('idle');
     onError(e.error);
   }
 
   function muteAudio(mute) {
-    setIsAudioMuted(mute);
+    cacheIsAudioMuted(mute);
 
     if (mediaStream.current) {
       mediaStream.current.getAudioTracks().forEach(audioTrack => {
@@ -265,10 +265,10 @@ function useMediaRecorder({
   }, [mediaStreamConstraints, mediaRecorderOptions, recordScreen]);
 
   return {
-    error,
+    error: errorCache,
     status,
-    mediaBlob,
-    isAudioMuted,
+    mediaBlob: mediaBlobCache,
+    isAudioMuted: isAudioMutedCache,
     stopRecording,
     getMediaStream,
     startRecording,

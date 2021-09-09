@@ -108,7 +108,7 @@ Creates a custom media recorder object using the [MediaRecorder API](https://dev
 |Property|Type|Description
 |-|-|-|
 |error|`Error`|Information about an operation failure. [Possible exceptions](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia)
-|status|`string`|Current state of recorder. One of `idle`, `acquiring_media`, `ready`, `recording`, `stopping`, `stopped`, `failed`.
+|status|`string`|Current state of recorder. One of `idle`, `acquiring_media`, `ready`, `recording`, `paused`,`stopping`, `stopped`, `failed`.
 |mediaBlob|`Blob`|Raw media data.
 |isAudioMuted|`boolean`|Indicates whether audio is active/inactive.
 |stopRecording|`function`|End a recording.
