@@ -95,6 +95,7 @@ Creates a custom media recorder object using the [MediaRecorder API](https://dev
 |-|-|-|
 |blobOptions|`BlobPropertyBag`|Options used for creating a [`Blob`](https://developer.mozilla.org/en-US/docs/Web/API/Blob/Blob) object.
 |recordScreen|`boolean`|Enable/disable screen capture.
+|customMediaStream|[`MediaStream`](https://developer.mozilla.org/en-US/docs/Web/API/MediaStream)|Pass a custom stream like [`canvas.captureStream`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/captureStream) and other custom stream
 |onStart|`function`|Callback to run when recording starts.
 |onStop|`function`|Callback to run when recording stops. Accepts a [`Blob`](https://developer.mozilla.org/en-US/docs/Web/API/Blob/Blob) object as a parameter.
 |onError|`function`|Callback to run when an error occurs while recording. Accepts an error object as a parameter.
