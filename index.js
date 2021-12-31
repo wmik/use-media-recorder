@@ -49,7 +49,7 @@ const noop = () => {};
  * @type {Object}
  * @property {BlobPropertyBag} [blobOptions]
  * @property {Boolean} [recordScreen]
- * @property {MediaStream} customMediaStream
+ * @property {MediaStream} [customMediaStream]
  * @property {Function} [onStart]
  * @property {Callback} [onStop]
  * @property {Callback} [onDataAvailable]
@@ -103,10 +103,12 @@ function useMediaRecorder({
     }
 
     setStatus('acquiring_media');
-    if(customMediaStream) {
+
+    if (customMediaStream && customMediaStream instanceof MediaStream) {
       mediaStream.current = customMediaStream;
-      return
+      return;
     }
+
     try {
       let stream;
 
