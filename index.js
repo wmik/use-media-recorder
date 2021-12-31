@@ -66,6 +66,7 @@ const noop = () => {};
  * @property {Function} stopRecording,
  * @property {Function} getMediaStream,
  * @property {Function} clearMediaStream,
+ * @property {Function} clearMediaBlob,
  * @property {Function} startRecording,
  * @property {Function} pauseRecording,
  * @property {Function} resumeRecording,
@@ -239,6 +240,10 @@ function useMediaRecorder({
     }
   }
 
+  function clearMediaBlob() {
+    cacheMediaBlob(null);
+  }
+
   React.useEffect(() => {
     if (!window.MediaRecorder) {
       throw new ReferenceError(
@@ -280,6 +285,7 @@ function useMediaRecorder({
     pauseRecording,
     resumeRecording,
     clearMediaStream,
+    clearMediaBlob,
     muteAudio: () => muteAudio(true),
     unMuteAudio: () => muteAudio(false),
     get liveStream() {

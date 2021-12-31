@@ -12,6 +12,7 @@ test('hook options', t => {
     status,
     getMediaStream,
     clearMediaStream,
+    clearMediaBlob,
     muteAudio,
     unMuteAudio,
     startRecording,
@@ -27,6 +28,7 @@ test('hook options', t => {
   t.false(isAudioMuted);
   t.true(typeof getMediaStream === 'function');
   t.true(typeof clearMediaStream === 'function');
+  t.true(typeof clearMediaBlob === 'function');
   t.true(typeof muteAudio === 'function');
   t.true(typeof unMuteAudio === 'function');
   t.true(typeof startRecording === 'function');
