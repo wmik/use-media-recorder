@@ -292,7 +292,7 @@ function useMediaRecorder({
     unMuteAudio: () => muteAudio(false),
     get liveStream() {
       if (mediaStream.current) {
-        return new MediaStream(mediaStream.current.getVideoTracks());
+        return new MediaStream(mediaStream.current.getTracks());
       }
       return null;
     }
