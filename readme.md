@@ -121,7 +121,7 @@ Creates a custom media recorder object using the [MediaRecorder API](https://dev
 |resumeRecording|`function`|Continue a recording from a previous pause.
 |muteAudio|`function`|Disable audio.
 |unMuteAudio|`function`|Enable audio.
-|liveStream|`MediaStream`|Real-time **MUTED** stream of current recording. Muted to prevent audio feedback.
+|liveStream|`MediaStream`|Real-time stream of current recording.
 
 ### More examples
 
