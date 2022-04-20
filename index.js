@@ -92,10 +92,13 @@ function useMediaRecorder({
   let mediaChunks = React.useRef([]);
   let mediaStream = React.useRef(null);
   let mediaRecorder = React.useRef(null);
+  let isMount = React.useRef(true);
   let [status, setStatus] = React.useState('idle');
   let [errorCache, cacheError] = React.useState(null);
   let [mediaBlobCache, cacheMediaBlob] = React.useState(null);
   let [isAudioMutedCache, cacheIsAudioMuted] = React.useState(false);
+
+  React.useEffect(() => () => (isMount.current = false), []);
 
   async function getMediaStream() {
     if (errorCache) {
@@ -137,6 +140,10 @@ function useMediaRecorder({
     } catch (err) {
       cacheError(err);
       setStatus('failed');
+    }
+
+    if (!isMount.current) {
+      clearMediaStream();
     }
   }
 
