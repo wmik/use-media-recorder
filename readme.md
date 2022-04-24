@@ -95,7 +95,7 @@ Creates a custom media recorder object using the [MediaRecorder API](https://dev
 |-|-|-|
 |blobOptions|`BlobPropertyBag`|Options used for creating a [`Blob`](https://developer.mozilla.org/en-US/docs/Web/API/Blob/Blob) object.
 |recordScreen|`boolean`|Enable/disable screen capture.
-|customMediaStream|[`MediaStream`](https://developer.mozilla.org/en-US/docs/Web/API/MediaStream)|Pass a custom stream like [`canvas.captureStream`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/captureStream) and other custom stream
+|customMediaStream|[`MediaStream`](https://developer.mozilla.org/en-US/docs/Web/API/MediaStream)|Custom stream e.g [`canvas.captureStream`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/captureStream)
 |onStart|`function`|Callback to run when recording starts.
 |onStop|`function`|Callback to run when recording stops. Accepts a [`Blob`](https://developer.mozilla.org/en-US/docs/Web/API/Blob/Blob) object as a parameter.
 |onError|`function`|Callback to run when an error occurs while recording. Accepts an error object as a parameter.
@@ -115,13 +115,13 @@ Creates a custom media recorder object using the [MediaRecorder API](https://dev
 |stopRecording|`function`|End a recording.
 |getMediaStream|`function`|Request for a media source. Camera, mic and/or screen access.
 |clearMediaStream|`function`|Resets the media stream object to `null`.
-|clearMediaBlob|`function`|Resets the recorded media object to `null`.
+|clearMediaBlob|`function`|Resets the media blob to `null`.
 |startRecording|`function(timeSlice?)`|Begin a recording. Optional argument `timeSlice` controls [chunk size](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder/start#parameters).
 |pauseRecording|`function`|Stop without ending a recording allowing the recording to continue later.
 |resumeRecording|`function`|Continue a recording from a previous pause.
 |muteAudio|`function`|Disable audio.
 |unMuteAudio|`function`|Enable audio.
-|liveStream|`MediaStream`|Real-time **MUTED** stream of current recording. Muted to prevent audio feedback.
+|liveStream|`MediaStream`|Real-time stream of current recording.
 
 ### More examples
 

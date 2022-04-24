@@ -11,6 +11,7 @@ export type Status =
 export interface MediaRecorderProps {
   blobOptions?: BlobPropertyBag;
   recordScreen?: boolean;
+  customMediaStream?: MediaStream;
   onStart?: () => void;
   onStop?: (blob: Blob) => void;
   onDataAvailable?: (blob: Blob) => void;
@@ -28,7 +29,7 @@ export interface MediaRecorderHookOptions {
   getMediaStream: () => Promise<void>;
   clearMediaStream: () => void;
   clearMediaBlob: () => void;
-  startRecording: (timeSlice?: number) => void;
+  startRecording: (timeSlice?: number) => Promise<void>;
   pauseRecording: () => void;
   resumeRecording: () => void;
   muteAudio: () => void;
