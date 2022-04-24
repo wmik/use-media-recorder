@@ -105,7 +105,7 @@ function useMediaRecorder({
     setStatus('acquiring_media');
     if(customMediaStream) {
       mediaStream.current = customMediaStream;
-      return
+      return customMediaStream;
     }
     try {
       let stream;
@@ -132,6 +132,8 @@ function useMediaRecorder({
 
       mediaStream.current = stream;
       setStatus('ready');
+
+      return stream;
     } catch (err) {
       cacheError(err);
       setStatus('failed');
