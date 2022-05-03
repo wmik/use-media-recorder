@@ -113,7 +113,7 @@ Creates a custom media recorder object using the [MediaRecorder API](https://dev
 |mediaBlob|`Blob`|Raw media data.
 |isAudioMuted|`boolean`|Indicates whether audio is active/inactive.
 |stopRecording|`function`|End a recording.
-|getMediaStream|`function`|Request for a media source. Camera, mic and/or screen access.
+|getMediaStream|`function`|Request for a media source. Camera, mic and/or screen access. Returns instance of requested media source or `customMediaStream` if was provided in initializing.
 |clearMediaStream|`function`|Resets the media stream object to `null`.
 |clearMediaBlob|`function`|Resets the media blob to `null`.
 |startRecording|`function(timeSlice?)`|Begin a recording. Optional argument `timeSlice` controls [chunk size](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder/start#parameters).
