@@ -185,15 +185,23 @@ function useMediaRecorder({
   }
 
   function handleStop() {
-    let [sampleChunk] = mediaChunks.current;
-    let blobPropertyBag = Object.assign(
-      { type: sampleChunk.type },
-      blobOptions
-    );
-    let blob = new Blob(mediaChunks.current, blobPropertyBag);
+    let blob = new Blob();
+    let sampleChunk = new Blob();
 
-    cacheMediaBlob(blob);
-    setStatus('stopped');
+    if (mediaChunks.current.length) {
+      [sampleChunk] = mediaChunks.current;
+
+      let blobPropertyBag = Object.assign(
+        { type: sampleChunk.type },
+        blobOptions
+      );
+
+      blob = new Blob(mediaChunks.current, blobPropertyBag);
+
+      cacheMediaBlob(blob);
+      setStatus('stopped');
+    }
+
     onStop(blob);
   }
 
