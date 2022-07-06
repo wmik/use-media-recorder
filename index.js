@@ -171,9 +171,14 @@ function useMediaRecorder({
       );
       mediaRecorder.current.addEventListener('stop', handleStop);
       mediaRecorder.current.addEventListener('error', handleError);
-      mediaRecorder.current.start(timeSlice);
-      setStatus('recording');
-      onStart();
+
+      try {
+        mediaRecorder.current.start(timeSlice);
+        setStatus('recording');
+        onStart();
+      } catch (error) {
+        handleError({ error });
+      }
     }
   }
 
@@ -199,9 +204,9 @@ function useMediaRecorder({
       blob = new Blob(mediaChunks.current, blobPropertyBag);
 
       cacheMediaBlob(blob);
-      setStatus('stopped');
     }
 
+    setStatus('stopped');
     onStop(blob);
   }
 
