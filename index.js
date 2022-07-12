@@ -146,6 +146,7 @@ function useMediaRecorder({
     if (mediaStream.current) {
       mediaStream.current.getTracks().forEach(track => track.stop());
       mediaStream.current = null;
+      setStatus("idle");
     }
   }
 
