@@ -288,12 +288,7 @@ function useMediaRecorder({
     clearMediaBlob,
     muteAudio: () => muteAudio(true),
     unMuteAudio: () => muteAudio(false),
-    get liveStream() {
-      if (mediaStream.current) {
-        return new MediaStream(mediaStream.current.getVideoTracks());
-      }
-      return null;
-    }
+    liveStream: mediaStream.current,
   };
 }
 
