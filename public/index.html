@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>wmik/use-media-recorder - React Media Recording Made Simple</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'code-bg': '#1e1e1e',
+                        'accent': '#ff6b6b',
+                        'secondary': '#4ecdc4',
+                        'dark': '#2d3748',
+                    },
+                    backgroundImage: {
+                        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+                        'grid-pattern': `url("data:image/svg+xml,%3csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3e%3cg fill='none' fill-rule='evenodd'%3e%3cg fill='%239C92AC' fill-opacity='0.05' fill-rule='nonzero'%3e%3ccircle cx='3' cy='3' r='3'/%3e%3c/g%3e%3c/g%3e%3c/svg%3e")`,
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'gradient': 'gradient 8s linear infinite',
+                        'blob': 'blob 7s infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translatey(0px)' },
+                            '50%': { transform: 'translatey(-20px)' },
+                        },
+                        gradient: {
+                            '0%, 100%': { backgroundPosition: '0% 50%' },
+                            '50%': { backgroundPosition: '100% 50%' },
+                        },
+                        blob: {
+                            '0%': { transform: 'translate(0px, 0px) scale(1)' },
+                            '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+                            '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+                            '100%': { transform: 'translate(0px, 0px) scale(1)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .code-syntax {
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        }
+
+        .hero-gradient {
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+
+        .glass {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .recording-dot {
+            animation: pulse 2s infinite;
+            background: #ff4444;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-900 text-white overflow-x-hidden font-[Nunito]">
+    <!-- Animated Background -->
+    <div class="fixed inset-0 z-0">
+        <div
+            class="absolute top-0 -left-4 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob">
+        </div>
+        <div
+            class="absolute top-0 -right-4 w-72 h-72 bg-yellow-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000">
+        </div>
+        <div
+            class="absolute -bottom-8 left-20 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000">
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="relative z-10 px-6 py-4 glass">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <div
+                    class="w-8 h-8 bg-gradient-to-r from-red-500 to-pink-500 rounded-lg flex items-center justify-center">
+                    <div class="w-3 h-3 bg-white rounded-full recording-dot"></div>
+                </div>
+                <span class="text-xl font-bold">wmik / use-media-recorder</span>
+            </div>
+            <div class="hidden md:flex items-center space-x-8">
+                <a href="#features" class="hover:text-accent transition-colors">Features</a>
+                <a href="#demo" class="hover:text-accent transition-colors">Demo</a>
+                <a href="https://github.com/wmik/use-media-recorder"
+                    class="hover:text-accent transition-colors">Documentation</a>
+                <a href="https://github.com/wmik/use-media-recorder"
+                    class="px-4 py-2 bg-white text-slate-900 rounded-lg hover:bg-gray-100 transition-all transform hover:scale-105">
+                    GitHub
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative z-10 min-h-screen flex items-center justify-center px-6 pt-4">
+        <div class="max-w-6xl mx-auto text-center">
+            <div class="animate-float">
+                <h1
+                    class="!leading-[1.5] text-6xl md:text-8xl font-bold bg-gradient-to-r from-white via-purple-200 to-pink-200 bg-clip-text text-transparent">
+                    Record Everything
+                </h1>
+                <p class="text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
+                    A powerful React hook that makes audio, video, and screen recording effortless.
+                    Built on the MediaRecorder API with zero dependencies.
+                </p>
+            </div>
+
+            <div class="flex flex-col md:flex-row items-center justify-center gap-6 mb-12">
+                <button onclick="scrollToDemo()"
+                    class="px-8 py-4 bg-gradient-to-r from-accent to-pink-500 text-white rounded-xl font-semibold hover:scale-105 transition-all duration-300 shadow-2xl hover:shadow-accent/25">
+                    Try Live Demo
+                </button>
+                <div class="code-syntax bg-slate-800 px-6 py-3 rounded-lg border border-slate-700 text-secondary">
+                    npm install @wmik/use-media-recorder
+                </div>
+            </div>
+
+            <!-- Feature Pills -->
+            <div class="flex flex-wrap justify-center gap-4 mb-16">
+                <div class="px-4 py-2 glass rounded-full text-sm">🎤 Audio Recording</div>
+                <div class="px-4 py-2 glass rounded-full text-sm">🎥 Video Capture</div>
+                <div class="px-4 py-2 glass rounded-full text-sm">🖥️ Screen Recording</div>
+                <div class="px-4 py-2 glass rounded-full text-sm">💅 Headless Design</div>
+                <div class="px-4 py-2 glass rounded-full text-sm">🔧 Fully Configurable</div>
+            </div>
+
+            <!-- Code Preview -->
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 max-w-4xl mx-auto text-left shadow-2xl">
+                <div class="flex items-center mb-4">
+                    <div class="flex space-x-2">
+                        <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+                        <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                        <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                    </div>
+                    <div class="ml-4 text-gray-400 text-sm">MediaRecorder.jsx</div>
+                </div>
+                <pre class="code-syntax text-sm overflow-x-auto"><code><span class="text-blue-400">import</span> <span class="text-green-400">useMediaRecorder</span> <span class="text-blue-400">from</span> <span class="text-yellow-300">'@wmik/use-media-recorder'</span>;
+
+<span class="text-blue-400">function</span> <span class="text-green-400">RecorderApp</span>() {
+  <span class="text-blue-400">const</span> {
+    <span class="text-white">status</span>,
+    <span class="text-white">mediaBlob</span>,
+    <span class="text-white">startRecording</span>,
+    <span class="text-white">stopRecording</span>
+  } = <span class="text-green-400">useMediaRecorder</span>({
+    <span class="text-white">recordScreen</span>: <span class="text-blue-400">true</span>,
+    <span class="text-white">blobOptions</span>: { <span class="text-white">type</span>: <span class="text-yellow-300">'video/webm'</span> }
+  });
+
+  <span class="text-blue-400">return</span> (
+    <span class="text-gray-400">&lt;</span><span class="text-red-400">div</span><span class="text-gray-400">&gt;</span>
+      <span class="text-gray-400">&lt;</span><span class="text-red-400">button</span> <span class="text-white">onClick</span>=<span class="text-gray-400">{</span><span class="text-white">startRecording</span><span class="text-gray-400">}&gt;</span>
+        Start Recording
+      <span class="text-gray-400">&lt;/</span><span class="text-red-400">button</span><span class="text-gray-400">&gt;</span>
+    <span class="text-gray-400">&lt;/</span><span class="text-red-400">div</span><span class="text-gray-400">&gt;</span>
+  );
+}</code></pre>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="relative z-10 py-24 px-6">
+        <div class="max-w-7xl mx-auto">
+            <h2
+                class="!leading-[1.5] text-4xl md:text-5xl font-bold text-center mb-16 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                Why Choose use-media-recorder?
+            </h2>
+
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="glass p-8 rounded-2xl hover:scale-105 transition-all duration-300">
+                    <div
+                        class="w-16 h-16 bg-gradient-to-r from-red-500 to-pink-500 rounded-xl flex items-center justify-center mb-6">
+                        <span class="text-2xl">🎯</span>
+                    </div>
+                    <h3 class="text-xl font-bold mb-4">Familiar API</h3>
+                    <p class="text-gray-300 leading-relaxed">
+                        Minimal abstraction over the native MediaRecorder API. If you know the web standard, you already
+                        know this hook.
+                    </p>
+                </div>
+
+                <div class="glass p-8 rounded-2xl hover:scale-105 transition-all duration-300">
+                    <div
+                        class="w-16 h-16 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center mb-6">
+                        <span class="text-2xl">⚡</span>
+                    </div>
+                    <h3 class="text-xl font-bold mb-4">Zero Dependencies</h3>
+                    <p class="text-gray-300 leading-relaxed">
+                        Lightweight and fast. No external dependencies means smaller bundle size and fewer security
+                        vulnerabilities.
+                    </p>
+                </div>
+
+                <div class="glass p-8 rounded-2xl hover:scale-105 transition-all duration-300">
+                    <div
+                        class="w-16 h-16 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-xl flex items-center justify-center mb-6">
+                        <span class="text-2xl">🎨</span>
+                    </div>
+                    <h3 class="text-xl font-bold mb-4">Headless Design</h3>
+                    <p class="text-gray-300 leading-relaxed">
+                        Bring your own UI. The hook provides the functionality, you control the user experience
+                        completely.
+                    </p>
+                </div>
+
+                <div class="glass p-8 rounded-2xl hover:scale-105 transition-all duration-300">
+                    <div
+                        class="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl flex items-center justify-center mb-6">
+                        <span class="text-2xl">🔧</span>
+                    </div>
+                    <h3 class="text-xl font-bold mb-4">Configurable</h3>
+                    <p class="text-gray-300 leading-relaxed">
+                        Fine-tune recording settings, blob options, and media constraints to match your exact
+                        requirements.
+                    </p>
+                </div>
+
+                <div class="glass p-8 rounded-2xl hover:scale-105 transition-all duration-300">
+                    <div
+                        class="w-16 h-16 bg-gradient-to-r from-orange-500 to-red-500 rounded-xl flex items-center justify-center mb-6">
+                        <span class="text-2xl">📱</span>
+                    </div>
+                    <h3 class="text-xl font-bold mb-4">Cross-Platform</h3>
+                    <p class="text-gray-300 leading-relaxed">
+                        Works seamlessly across desktop and mobile browsers that support the MediaRecorder API.
+                    </p>
+                </div>
+
+                <div class="glass p-8 rounded-2xl hover:scale-105 transition-all duration-300">
+                    <div
+                        class="w-16 h-16 bg-gradient-to-r from-pink-500 to-rose-500 rounded-xl flex items-center justify-center mb-6">
+                        <span class="text-2xl">🚀</span>
+                    </div>
+                    <h3 class="text-xl font-bold mb-4">TypeScript Ready</h3>
+                    <p class="text-gray-300 leading-relaxed">
+                        Full TypeScript support with comprehensive type definitions for a better developer experience.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demo Section -->
+    <section id="demo" class="relative z-10 py-24 px-6 bg-slate-800/50">
+        <div class="max-w-6xl mx-auto">
+            <h2
+                class="text-4xl md:text-5xl font-bold text-center mb-16 bg-gradient-to-r from-accent to-pink-400 bg-clip-text text-transparent">
+                Interactive Demo
+            </h2>
+
+            <div class="grid md:grid-cols-2 gap-12">
+                <div class="space-y-8">
+                    <div class="glass p-6 rounded-2xl">
+                        <h3 class="text-xl font-bold mb-4 flex items-center">
+                            <span class="mr-2">🎤</span>
+                            Audio Recording
+                        </h3>
+                        <p class="text-gray-300 mb-4">Record high-quality audio from your microphone</p>
+                        <div class="flex gap-4">
+                            <button id="audioStart"
+                                class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
+                                Start Audio
+                            </button>
+                            <button id="audioStop"
+                                class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                                disabled>
+                                Stop
+                            </button>
+                        </div>
+                        <div id="audioStatus" class="mt-4 text-sm text-gray-400">Ready to record</div>
+                        <div id="audioPlayer" class="mt-4"></div>
+                    </div>
+
+                    <div class="glass p-6 rounded-2xl">
+                        <h3 class="text-xl font-bold mb-4 flex items-center">
+                            <span class="mr-2">🎥</span>
+                            Video Recording
+                        </h3>
+                        <p class="text-gray-300 mb-4">Capture video from your camera</p>
+                        <div class="flex gap-4">
+                            <button id="videoStart"
+                                class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+                                Start Video
+                            </button>
+                            <button id="videoStop"
+                                class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                                disabled>
+                                Stop
+                            </button>
+                        </div>
+                        <div id="videoStatus" class="mt-4 text-sm text-gray-400">Ready to record</div>
+                        <div id="videoPlayer" class="mt-4"></div>
+                    </div>
+
+                    <div class="glass p-6 rounded-2xl">
+                        <h3 class="text-xl font-bold mb-4 flex items-center">
+                            <span class="mr-2">🖥️</span>
+                            Screen Recording
+                        </h3>
+                        <p class="text-gray-300 mb-4">Record your entire screen or specific windows</p>
+                        <div class="flex gap-4">
+                            <button id="screenStart"
+                                class="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors">
+                                Start Screen
+                            </button>
+                            <button id="screenStop"
+                                class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                                disabled>
+                                Stop
+                            </button>
+                        </div>
+                        <div id="screenStatus" class="mt-4 text-sm text-gray-400">Ready to record</div>
+                        <div id="screenPlayer" class="mt-4"></div>
+                    </div>
+                </div>
+
+                <div class="glass p-8 rounded-2xl">
+                    <h3 class="text-xl font-bold mb-6">Code Example</h3>
+                    <pre class="code-syntax text-sm overflow-auto max-h-96"><code><span class="text-blue-400">const</span> {
+  <span class="text-white">error</span>,
+  <span class="text-white">status</span>,
+  <span class="text-white">mediaBlob</span>,
+  <span class="text-white">stopRecording</span>,
+  <span class="text-white">getMediaStream</span>,
+  <span class="text-white">startRecording</span>
+} = <span class="text-green-400">useMediaRecorder</span>({
+  <span class="text-white">recordScreen</span>: <span class="text-blue-400">true</span>,
+  <span class="text-white">blobOptions</span>: { 
+    <span class="text-white">type</span>: <span class="text-yellow-300">'video/webm'</span> 
+  },
+  <span class="text-white">mediaStreamConstraints</span>: { 
+    <span class="text-white">audio</span>: <span class="text-blue-400">true</span>, 
+    <span class="text-white">video</span>: <span class="text-blue-400">true</span> 
+  }
+});
+
+<span class="text-gray-400">// Available status values:</span>
+<span class="text-gray-400">// 'idle', 'acquiring_media', 'ready',</span>
+<span class="text-gray-400">// 'recording', 'paused', 'stopping',</span>
+<span class="text-gray-400">// 'stopped', 'failed'</span>
+
+<span class="text-blue-400">const</span> <span class="text-white">handleStart</span> = <span class="text-blue-400">async</span> () <span class="text-blue-400">=></span> {
+  <span class="text-blue-400">await</span> <span class="text-green-400">getMediaStream</span>();
+  <span class="text-green-400">startRecording</span>();
+};
+
+<span class="text-blue-400">const</span> <span class="text-white">handleStop</span> = () <span class="text-blue-400">=></span> {
+  <span class="text-green-400">stopRecording</span>();
+};
+
+<span class="text-gray-400">// Use mediaBlob when recording stops</span>
+<span class="text-blue-400">useEffect</span>(() <span class="text-blue-400">=></span> {
+  <span class="text-blue-400">if</span> (<span class="text-white">mediaBlob</span>) {
+    <span class="text-blue-400">const</span> <span class="text-white">url</span> = <span class="text-white">URL</span>.<span class="text-green-400">createObjectURL</span>(<span class="text-white">mediaBlob</span>);
+    <span class="text-gray-400">// Use the recorded media...</span>
+  }
+}, [<span class="text-white">mediaBlob</span>]);</code></pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Installation Section -->
+    <section class="relative z-10 py-24 px-6">
+        <div class="max-w-4xl mx-auto text-center">
+            <h2 class="text-4xl font-bold mb-8 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                Get Started in Seconds
+            </h2>
+
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="glass p-8 rounded-2xl">
+                    <h3 class="text-xl font-bold mb-4">npm</h3>
+                    <div class="bg-slate-800 p-4 rounded-lg code-syntax text-secondary">
+                        npm install @wmik/use-media-recorder
+                    </div>
+                </div>
+
+                <div class="glass p-8 rounded-2xl">
+                    <h3 class="text-xl font-bold mb-4">yarn</h3>
+                    <div class="bg-slate-800 p-4 rounded-lg code-syntax text-secondary">
+                        yarn add @wmik/use-media-recorder
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-12">
+                <a href="https://github.com/wmik/use-media-recorder"
+                    class="inline-flex items-center px-8 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-semibold hover:scale-105 transition-all duration-300 shadow-2xl">
+                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z"
+                            clip-rule="evenodd"></path>
+                    </svg>
+                    View on GitHub
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="relative z-10 py-12 px-6 bg-slate-800/50 border-t border-slate-700">
+        <div class="max-w-7xl mx-auto text-center">
+            <div class="flex items-center justify-center space-x-2 mb-4">
+                <div
+                    class="w-8 h-8 bg-gradient-to-r from-red-500 to-pink-500 rounded-lg flex items-center justify-center">
+                    <div class="w-3 h-3 bg-white rounded-full"></div>
+                </div>
+                <span class="text-xl font-bold">wmik / use-media-recorder</span>
+            </div>
+            <p class="text-gray-400 mb-4">Made with ❤️ for the React community</p>
+            <p class="text-sm text-gray-500">MIT © 2020 - Present</p>
+        </div>
+    </footer>
+
+    <script>
+        // Smooth scrolling
+        function scrollToDemo() {
+            document.getElementById('demo').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Demo functionality
+        class MediaRecorderDemo {
+            constructor() {
+                this.audioRecorder = null;
+                this.videoRecorder = null;
+                this.screenRecorder = null;
+                this.setupEventListeners();
+            }
+
+            setupEventListeners() {
+                // Audio recording
+                document.getElementById('audioStart').addEventListener('click', () => this.startAudioRecording());
+                document.getElementById('audioStop').addEventListener('click', () => this.stopRecording('audio'));
+
+                // Video recording
+                document.getElementById('videoStart').addEventListener('click', () => this.startVideoRecording());
+                document.getElementById('videoStop').addEventListener('click', () => this.stopRecording('video'));
+
+                // Screen recording
+                document.getElementById('screenStart').addEventListener('click', () => this.startScreenRecording());
+                document.getElementById('screenStop').addEventListener('click', () => this.stopRecording('screen'));
+            }
+
+            async startAudioRecording() {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    this.audioRecorder = new MediaRecorder(stream);
+                    this.audioRecorder.chunks = [];
+
+                    this.audioRecorder.ondataavailable = (event) => {
+                        this.audioRecorder.chunks.push(event.data);
+                    };
+
+                    this.audioRecorder.onstop = () => {
+                        const blob = new Blob(this.audioRecorder.chunks, { type: 'audio/wav' });
+                        const url = URL.createObjectURL(blob);
+                        const audio = document.createElement('audio');
+                        audio.controls = true;
+                        audio.src = url;
+                        audio.className = 'w-full mt-2';
+
+                        const player = document.getElementById('audioPlayer');
+                        player.innerHTML = '';
+                        player.appendChild(audio);
+                    };
+
+                    this.audioRecorder.start();
+                    this.updateButtons('audio', true);
+                    this.updateStatus('audio', 'Recording... 🔴');
+                } catch (error) {
+                    this.updateStatus('audio', 'Error: ' + error.message);
+                }
+            }
+
+            async startVideoRecording() {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                    this.videoRecorder = new MediaRecorder(stream);
+                    this.videoRecorder.chunks = [];
+
+                    this.videoRecorder.ondataavailable = (event) => {
+                        this.videoRecorder.chunks.push(event.data);
+                    };
+
+                    this.videoRecorder.onstop = () => {
+                        const blob = new Blob(this.videoRecorder.chunks, { type: 'video/webm' });
+                        const url = URL.createObjectURL(blob);
+                        const video = document.createElement('video');
+                        video.controls = true;
+                        video.src = url;
+                        video.className = 'w-full mt-2 rounded-lg';
+                        video.style.maxHeight = '200px';
+
+                        const player = document.getElementById('videoPlayer');
+                        player.innerHTML = '';
+                        player.appendChild(video);
+                    };
+
+                    this.videoRecorder.start();
+                    this.updateButtons('video', true);
+                    this.updateStatus('video', 'Recording... 🔴');
+                } catch (error) {
+                    this.updateStatus('video', 'Error: ' + error.message);
+                }
+            }
+
+            async startScreenRecording() {
+                try {
+                    const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+                    this.screenRecorder = new MediaRecorder(stream);
+                    this.screenRecorder.chunks = [];
+
+                    this.screenRecorder.ondataavailable = (event) => {
+                        this.screenRecorder.chunks.push(event.data);
+                    };
+
+                    this.screenRecorder.onstop = () => {
+                        const blob = new Blob(this.screenRecorder.chunks, { type: 'video/webm' });
+                        const url = URL.createObjectURL(blob);
+                        const video = document.createElement('video');
+                        video.controls = true;
+                        video.src = url;
+                        video.className = 'w-full mt-2 rounded-lg';
+                        video.style.maxHeight = '200px';
+
+                        const player = document.getElementById('screenPlayer');
+                        player.innerHTML = '';
+                        player.appendChild(video);
+                    };
+
+                    this.screenRecorder.start();
+                    this.updateButtons('screen', true);
+                    this.updateStatus('screen', 'Recording... 🔴');
+
+                    // Stop recording when user stops sharing
+                    stream.getVideoTracks()[0].onended = () => {
+                        this.stopRecording('screen');
+                    };
+                } catch (error) {
+                    this.updateStatus('screen', 'Error: ' + error.message);
+                }
+            }
+
+            stopRecording(type) {
+                let recorder;
+                switch (type) {
+                    case 'audio':
+                        recorder = this.audioRecorder;
+                        break;
+                    case 'video':
+                        recorder = this.videoRecorder;
+                        break;
+                    case 'screen':
+                        recorder = this.screenRecorder;
+                        break;
+                }
+
+                if (recorder && recorder.state === 'recording') {
+                    recorder.stop();
+                    recorder.stream.getTracks().forEach(track => track.stop());
+                    this.updateButtons(type, false);
+                    this.updateStatus(type, 'Processing... ⏳');
+                }
+            }
+
+            updateButtons(type, recording) {
+                const startBtn = document.getElementById(`${type}Start`);
+                const stopBtn = document.getElementById(`${type}Stop`);
+
+                startBtn.disabled = recording;
+                stopBtn.disabled = !recording;
+
+                if (recording) {
+                    startBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    stopBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    stopBtn.classList.add('bg-red-500', 'hover:bg-red-600');
+                    stopBtn.classList.remove('bg-gray-600', 'hover:bg-gray-700');
+                } else {
+                    startBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    stopBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    stopBtn.classList.remove('bg-red-500', 'hover:bg-red-600');
+                    stopBtn.classList.add('bg-gray-600', 'hover:bg-gray-700');
+                }
+            }
+
+            updateStatus(type, message) {
+                document.getElementById(`${type}Status`).textContent = message;
+
+                setTimeout(() => {
+                    if (message.includes('Processing')) {
+                        document.getElementById(`${type}Status`).textContent = 'Recording complete! ✅';
+                    }
+                }, 1000);
+            }
+        }
+
+        // Initialize demo when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new MediaRecorderDemo();
+        });
+
+        // Smooth scroll for navigation links
+        document.addEventListener('DOMContentLoaded', function () {
+            const links = document.querySelectorAll('a[href^="#"]');
+            links.forEach(link => {
+                link.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth' });
+                    }
+                });
+            });
+        });
+
+        // Add parallax effect to background blobs
+        window.addEventListener('scroll', () => {
+            const scrolled = window.pageYOffset;
+            const blobs = document.querySelectorAll('.animate-blob');
+            blobs.forEach((blob, index) => {
+                const speed = 0.5 + index * 0.1;
+                blob.style.transform = `translateY(${scrolled * speed}px)`;
+            });
+        });
+    </script>
+</body>
+
+</html>
