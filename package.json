@@ -5,7 +5,7 @@
   "main": "index.js",
   "types": "index.d.ts",
   "scripts": {
-    "test": "ava"
+    "test": "vitest"
   },
   "keywords": [
     "react",
@@ -32,18 +32,19 @@
   "author": "wmik <contact@wmik.me>",
   "license": "MIT",
   "peerDependencies": {
-    "react": "^17 || ^18"
+    "react": "^17 || ^18 || ^19"
   },
   "devDependencies": {
-    "@testing-library/react-hooks": "^7.0.2",
-    "ava": "^3.15.0",
-    "react": "^17.0.2",
-    "react-test-renderer": "^17.0.2",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/react": "^16.3.1",
+    "browser-env": "^3.3.0",
+    "jsdom": "^27.3.0",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "vitest": "^4.0.16",
     "window": "^4.2.7"
   },
-  "ava": {
-    "require": [
-      "./setup-window.js"
-    ]
+  "dependencies": {
+    "@testing-library/jest-dom": "^6.9.1"
   }
 }
