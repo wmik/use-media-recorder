@@ -104,8 +104,14 @@ function useMediaRecorder({
 
     setStatus('acquiring_media');
 
-    if (customMediaStream && customMediaStream instanceof MediaStream) {
+    if (customMediaStream) {
+      if(!customMediaStream instanceof MediaStream) {
+        console.warn('Some operations may fail because the provided media stream is not an instance of `MediaStream`.');
+      }
+
       mediaStream.current = customMediaStream;
+      setStatus('ready');
+
       return customMediaStream;
     }
 
@@ -151,6 +157,11 @@ function useMediaRecorder({
   }
 
   async function startRecording(timeSlice) {
+    if(mediaRecorder.current && mediaRecorder.current.state !== 'inactive') {
+      console.warn('Attempting to call `startRecording` while state is already `recording`'); 
+      return;
+    }
+
     if (errorCache) {
       cacheError(null);
     }
@@ -161,7 +172,7 @@ function useMediaRecorder({
 
     mediaChunks.current = [];
 
-    if (mediaStream.current) {
+    if (mediaStream.current) { 
       mediaRecorder.current = new MediaRecorder(
         mediaStream.current,
         mediaRecorderOptions
@@ -213,7 +224,7 @@ function useMediaRecorder({
 
   function handleError(e) {
     cacheError(e.error);
-    setStatus('idle');
+    setStatus('failed');
     onError(e.error);
   }
 
@@ -254,6 +265,7 @@ function useMediaRecorder({
       mediaRecorder.current.removeEventListener('stop', handleStop);
       mediaRecorder.current.removeEventListener('error', handleError);
       mediaRecorder.current = null;
+
       if (!customMediaStream) {
         clearMediaStream();
       }
@@ -267,7 +279,7 @@ function useMediaRecorder({
   React.useEffect(() => {
     if (!window.MediaRecorder) {
       throw new ReferenceError(
-        'MediaRecorder is not supported in this browser. Please ensure that you are running the latest version of chrome/firefox/edge.'
+        'MediaRecorder is not supported in this browser. Please ensure that you are running the latest version of your browser.'
       );
     }
 
@@ -308,12 +320,7 @@ function useMediaRecorder({
     clearMediaBlob,
     muteAudio: () => muteAudio(true),
     unMuteAudio: () => muteAudio(false),
-    get liveStream() {
-      if (mediaStream.current) {
-        return new MediaStream(mediaStream.current.getTracks());
-      }
-      return null;
-    }
+    liveStream: mediaStream.current
   };
 }
 
