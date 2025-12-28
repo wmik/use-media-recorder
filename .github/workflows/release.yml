@@ -33,7 +33,7 @@ jobs:
     - name: Run tests
       run: npm test # Executes the "test" script defined in your package.json
 
- publish:
+  publish:
     needs: test
     runs-on: ubuntu-latest
     # if: github.ref == 'refs/heads/main' && github.event_name == 'push'
