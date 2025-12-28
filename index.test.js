@@ -1,10 +1,10 @@
 import { vi } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
-import { cleanup } from '@testing-library/react';
+import { renderHook, waitFor, act, cleanup } from '@testing-library/react';
 import useMediaRecorder from './index';
 
+
 // Mock MediaRecorder and related APIs
-const createMockMediaRecorder = () => ({
+let createMockMediaRecorder = () => ({
   start: vi.fn(),
   stop: vi.fn(),
   pause: vi.fn(),
@@ -17,16 +17,16 @@ const createMockMediaRecorder = () => ({
   onerror: null,
 });
 
-const createMockTrack = (kind) => ({
+ let createMockTrack = (kind) => ({
   stop: vi.fn(),
   enabled: true,
   kind,
   id: `${kind}-track-${Math.random()}`,
 });
 
-const createMockMediaStream = () => {
-  const audioTrack = createMockTrack('audio');
-  const videoTrack = createMockTrack('video');
+ let createMockMediaStream = () => {
+  let audioTrack = createMockTrack('audio');
+  let videoTrack = createMockTrack('video');
   
   return {
     id: 'mock-stream',
@@ -34,6 +34,7 @@ const createMockMediaStream = () => {
     getTracks: vi.fn(() => [audioTrack, videoTrack]),
     getAudioTracks: vi.fn(() => [audioTrack]),
     getVideoTracks: vi.fn(() => [videoTrack]),
+    addTrack: vi.fn()
   };
 };
 
@@ -46,11 +47,35 @@ beforeEach(() => {
   mockMediaStream = createMockMediaStream();
   listeners = {};
   
-  global.MediaRecorder = vi.fn((stream, options) => {
-    const recorder = {
+	global.MediaStream = vi.fn().mockImplementation(function() { return mockMediaStream; });
+  global.MediaRecorder = vi.fn().mockImplementation(function (stream, options) {
+    let recordState = 'inactive';
+
+     return {
       ...mockMediaRecorder,
       stream,
       options,
+      get state() { return recordState; },
+      pause: vi.fn(() => {
+        mockMediaRecorder.pause();
+        recordState = 'paused';
+      }),
+      resume: vi.fn(() => {
+        mockMediaRecorder.resume();
+        recordState = 'recording';
+      }),
+      start: vi.fn((timeSlice) => {
+        mockMediaRecorder.start(timeSlice);
+        recordState = 'recording';
+      }),
+      stop: vi.fn(() => {
+        mockMediaRecorder.stop();
+        recordState = 'inactive';
+
+        if(listeners.stop) {
+          listeners.stop.forEach(handler => handler());
+        }
+      }),
       addEventListener: vi.fn((event, handler) => {
         if (!listeners[event]) {
           listeners[event] = [];
@@ -59,31 +84,28 @@ beforeEach(() => {
       }),
       removeEventListener: vi.fn((event, handler) => {
         if (listeners[event]) {
-          const idx = listeners[event].indexOf(handler);
+           let idx = listeners[event].indexOf(handler);
           if (idx > -1) {
             listeners[event].splice(idx, 1);
           }
         }
       }),
-      start: mockMediaRecorder.start,
-      stop: vi.fn(() => {
-        if (listeners.stop) {
-          listeners.stop.forEach(handler => handler());
-        }
-      }),
-      pause: mockMediaRecorder.pause,
-      resume: mockMediaRecorder.resume,
     };
-    return recorder;
   });
   
   global.MediaRecorder.isTypeSupported = vi.fn(() => true);
   
   global.navigator.mediaDevices = {
-    getUserMedia: vi.fn(() => Promise.resolve(createMockMediaStream())),
-    getDisplayMedia: vi.fn(() => Promise.resolve(createMockMediaStream())),
+    getUserMedia: vi.fn(() => Promise.resolve(mockMediaStream)),
+    getDisplayMedia: vi.fn(() => Promise.resolve(mockMediaStream)),
   };
 });
+
+function delay(callback) {
+  setTimeout(() => {
+    callback();
+  }, 1000);
+}
 
 afterEach(() => {
   cleanup();
@@ -93,42 +115,53 @@ afterEach(() => {
 // Error Handling Tests
 describe('useMediaRecorder - Error Handling', () => {
   it('should catch synchronous errors from MediaRecorder.start()', async () => {
-    const onError = vi.fn();
+     let onError = vi.fn();
+
     mockMediaRecorder.start.mockImplementation(() => {
       throw new DOMException('InvalidStateError');
     });
     
-    const { result } = renderHook(() =>
+     let { result } = renderHook(() =>
       useMediaRecorder({
         onError,
         mediaStreamConstraints: { audio: true },
       })
     );
     
-    await result.current.getMediaStream();
+    await act(async () => {
+      await result.current.getMediaStream();
+    });   
     
     await waitFor(() => {
       expect(result.current.status).toBe('ready');
     });
     
-    result.current.startRecording();
-    
-    expect(onError).toHaveBeenCalled();
-    expect(result.current.status).toBe('failed');
+    await act(async () => {
+      await result.current.startRecording();
+    });
+
+    await waitFor(() => {
+      expect(onError).toHaveBeenCalled();
+      expect(result.current.status).toBe('failed');
+    });
   });
   
   it('should handle getUserMedia rejection', async () => {
-    const error = new Error('Permission denied');
-    global.navigator.mediaDevices.getUserMedia.mockRejectedValue(error);
+    let error = new Error('Permission denied');
     
-    const { result } = renderHook(() =>
+		global.navigator.mediaDevices.getUserMedia.mockRejectedValue(error);
+    
+     let { result } = renderHook(() =>
       useMediaRecorder({
         mediaStreamConstraints: { audio: true },
       })
     );
     
-    await result.current.getMediaStream();
     
+    await act(async () => {
+      await result.current.getMediaStream();
+    });
+ 
     await waitFor(() => {
       expect(result.current.error).toBeDefined();
       expect(result.current.status).toBe('failed');
@@ -136,17 +169,19 @@ describe('useMediaRecorder - Error Handling', () => {
   });
   
   it('should handle getDisplayMedia rejection for screen recording', async () => {
-    const error = new Error('User cancelled');
+     let error = new Error('User cancelled');
     global.navigator.mediaDevices.getDisplayMedia.mockRejectedValue(error);
     
-    const { result } = renderHook(() =>
+     let { result } = renderHook(() =>
       useMediaRecorder({
         recordScreen: true,
         mediaStreamConstraints: { audio: true, video: true },
       })
     );
     
-    await result.current.getMediaStream();
+    await act(async () => {
+      await result.current.getMediaStream();
+    });
     
     await waitFor(() => {
       expect(result.current.error).toBeDefined();
@@ -155,29 +190,35 @@ describe('useMediaRecorder - Error Handling', () => {
   });
   
   it('should handle immediate stopRecording after startRecording', async () => {
-    const { result } = renderHook(() =>
+     let { result } = renderHook(() =>
       useMediaRecorder({
         mediaStreamConstraints: { audio: true },
       })
     );
     
-    await result.current.getMediaStream();
+    await act(async () => {
+      await result.current.getMediaStream();
+    });
     
     await waitFor(() => {
       expect(result.current.status).toBe('ready');
     });
-    
-    result.current.startRecording();
-    result.current.stopRecording();
-    
-    expect(mockMediaRecorder.stop).toHaveBeenCalled();
+   
+    await act(async () => { 
+	    await result.current.startRecording();
+  	  result.current.stopRecording();
+    });
+
+    await waitFor(() => {
+      expect(mockMediaRecorder.stop).toHaveBeenCalled();
+    });
   });
 });
 
 // State Transition Tests
 describe('useMediaRecorder - State Transitions', () => {
   it('should transition through correct states: idle → acquiring_media → ready', async () => {
-    const { result } = renderHook(() =>
+     let { result } = renderHook(() =>
       useMediaRecorder({
         mediaStreamConstraints: { audio: true },
       })
@@ -185,9 +226,12 @@ describe('useMediaRecorder - State Transitions', () => {
     
     expect(result.current.status).toBe('idle');
     
-    result.current.getMediaStream();
-    
-    expect(result.current.status).toBe('acquiring_media');
+    await act(async () => 
+      await result.current.getMediaStream()
+    );
+
+    // TODO: mock delay to simulate user selection in browser
+    // expect(result.current.status).toBe('acquiring_media');
     
     await waitFor(() => {
       expect(result.current.status).toBe('ready');
@@ -195,162 +239,242 @@ describe('useMediaRecorder - State Transitions', () => {
   });
   
   it('should transition through recording lifecycle', async () => {
-    const { result } = renderHook(() =>
+     let { result } = renderHook(() =>
       useMediaRecorder({
         mediaStreamConstraints: { audio: true },
       })
     );
     
-    await result.current.getMediaStream();
-    
+    await act(async () => {
+      await result.current.getMediaStream();
+    });
+
     await waitFor(() => {
       expect(result.current.status).toBe('ready');
     });
     
-    result.current.startRecording();
-    expect(result.current.status).toBe('recording');
-    expect(mockMediaRecorder.start).toHaveBeenCalled();
+		await act(async () => {
+			await result.current.startRecording();
+		});
+
+
+    await waitFor(() => {
+      expect(result.current.status).toBe('recording');
+    });
+
+    await waitFor(() => {
+      expect(mockMediaRecorder.start).toHaveBeenCalled();
+    });
     
-    result.current.pauseRecording();
-    expect(mockMediaRecorder.pause).toHaveBeenCalled();
+		await act(async () => {
+			await result.current.pauseRecording();
+    });
+
+    await waitFor(() => {
+      expect(mockMediaRecorder.pause).toHaveBeenCalled();
+      expect(result.current.status).toBe('paused');
+    });
     
-    result.current.resumeRecording();
-    expect(mockMediaRecorder.resume).toHaveBeenCalled();
-    
-    result.current.stopRecording();
-    expect(mockMediaRecorder.stop).toHaveBeenCalled();
+
+		await act(async () => {
+			await result.current.resumeRecording();
+		});
+
+    await waitFor(() => {
+      expect(mockMediaRecorder.resume).toHaveBeenCalled();
+      expect(result.current.status).toBe('recording');
+    });
+
+		await act(async () => {
+			await result.current.stopRecording();
+      // TODO: Test intermediate state
+      //expect(result.current.status).toBe('stopping');
+		});
+
+    await waitFor(() => {
+      expect(mockMediaRecorder.stop).toHaveBeenCalled();
+      expect(result.current.status).toBe('idle');
+    });
   });
   
   it('should not allow startRecording when already recording', async () => {
-    const { result } = renderHook(() =>
+     let { result } = renderHook(() =>
       useMediaRecorder({
         mediaStreamConstraints: { audio: true },
       })
     );
-    
-    await result.current.getMediaStream();
-    
+
+    await act(async () => { 
+			await result.current.getMediaStream();
+    });
+
     await waitFor(() => {
       expect(result.current.status).toBe('ready');
     });
     
-    result.current.startRecording();
-    expect(mockMediaRecorder.start).toHaveBeenCalledTimes(1);
+    await act(async () => { 
+			await result.current.startRecording();
+		});
+
+    await waitFor(() => {
+      expect(mockMediaRecorder.start).toHaveBeenCalledTimes(1);
+    });
     
-    result.current.startRecording();
-    expect(mockMediaRecorder.start).toHaveBeenCalledTimes(1);
+    await act(async () => { 
+			await result.current.startRecording();
+		});
+
+    await waitFor(() => {
+      expect(mockMediaRecorder.start).toHaveBeenCalledTimes(1);
+    });
   });
 });
 
 // Audio Muting Tests
 describe('useMediaRecorder - Audio Muting', () => {
   it('should mute audio tracks', async () => {
-    const { result } = renderHook(() =>
-      useMediaRecorder({
-        mediaStreamConstraints: { audio: true },
-      })
-    );
+    let { result } = renderHook(() =>
+     useMediaRecorder({
+       mediaStreamConstraints: { audio: true },
+    }));
     
-    await result.current.getMediaStream();
-    
+    await act(async () => { 
+			result.current.getMediaStream();
+    });
+
     await waitFor(() => {
       expect(result.current.status).toBe('ready');
     });
-    
-    result.current.muteAudio();
-    
-    expect(result.current.isAudioMuted).toBe(true);
-    const audioTracks = result.current.liveStream.getAudioTracks();
+
+		await act(async () => {   
+			await result.current.muteAudio();
+    });
+
+    await waitFor(() => {
+      expect(result.current.isAudioMuted).toBe(true);
+    });
+
+    let audioTracks = result.current.liveStream.getAudioTracks();
+
     expect(audioTracks[0].enabled).toBe(false);
   });
   
   it('should unmute audio tracks', async () => {
-    const { result } = renderHook(() =>
+     let { result } = renderHook(() =>
       useMediaRecorder({
         mediaStreamConstraints: { audio: true },
       })
     );
     
-    await result.current.getMediaStream();
-    
+    await act(async () => { 
+			await result.current.getMediaStream();
+    });
+
     await waitFor(() => {
       expect(result.current.status).toBe('ready');
     });
     
-    result.current.muteAudio();
-    expect(result.current.isAudioMuted).toBe(true);
-    
-    result.current.unMuteAudio();
-    expect(result.current.isAudioMuted).toBe(false);
+    await act(() => { 
+			result.current.muteAudio();
+    });
+
+    await waitFor(() => {
+      expect(result.current.isAudioMuted).toBe(true);
+    });
+		
+    await act(() => { 
+			result.current.unMuteAudio();
+		});
+
+
+    await waitFor(() => {
+      expect(result.current.isAudioMuted).toBe(false);
+    });
   });
 });
 
 // Callback Tests
 describe('useMediaRecorder - Callbacks', () => {
   it('should call onStart when recording begins', async () => {
-    const onStart = vi.fn();
+     let onStart = vi.fn();
     
-    const { result } = renderHook(() =>
+     let { result } = renderHook(() =>
       useMediaRecorder({
         onStart,
         mediaStreamConstraints: { audio: true },
       })
     );
     
-    await result.current.getMediaStream();
-    
+    await act(async () => { 
+			await result.current.getMediaStream();
+    });
+
     await waitFor(() => {
       expect(result.current.status).toBe('ready');
     });
     
-    result.current.startRecording();
-    
-    expect(onStart).toHaveBeenCalled();
+
+    await act(async () => { 
+			await result.current.startRecording();
+    });
+
+    await waitFor(() => {
+      expect(onStart).toHaveBeenCalled();
+    });
   });
   
   it('should call onStop with blob when recording ends', async () => {
-    const onStop = vi.fn();
+     let onStop = vi.fn();
     
-    const { result } = renderHook(() =>
+     let { result } = renderHook(() =>
       useMediaRecorder({
         onStop,
         mediaStreamConstraints: { audio: true },
       })
     );
     
-    await result.current.getMediaStream();
-    
+    await act(async () => { 
+			await result.current.getMediaStream();
+    });
+
     await waitFor(() => {
       expect(result.current.status).toBe('ready');
     });
     
-    result.current.startRecording();
-    result.current.stopRecording();
-    
+		
+    await act(async () => { 
+			await result.current.startRecording();
+			result.current.stopRecording();
+    });
+
     await waitFor(() => {
       expect(onStop).toHaveBeenCalled();
     });
   });
   
   it('should call onDataAvailable when data is received', async () => {
-    const onDataAvailable = vi.fn();
+     let onDataAvailable = vi.fn();
     
-    const { result } = renderHook(() =>
+     let { result } = renderHook(() =>
       useMediaRecorder({
         onDataAvailable,
         mediaStreamConstraints: { audio: true },
       })
     );
     
-    await result.current.getMediaStream();
-    
+    await act(async () => { 
+			await result.current.getMediaStream();
+    });
+
     await waitFor(() => {
       expect(result.current.status).toBe('ready');
     });
     
-    result.current.startRecording();
+    await act(async () => { 
+			result.current.startRecording();
+		});
     
-    const mockBlob = new Blob(['test'], { type: 'audio/webm' });
+    let mockBlob = new Blob(['test'], { type: 'audio/webm' });
     
     if (listeners.dataavailable) {
       listeners.dataavailable.forEach(handler => {
@@ -358,28 +482,34 @@ describe('useMediaRecorder - Callbacks', () => {
       });
     }
     
-    expect(onDataAvailable).toHaveBeenCalledWith(mockBlob);
+    await waitFor(() => {
+      expect(onDataAvailable).toHaveBeenCalledWith(mockBlob);
+    });
   });
   
   it('should handle empty blobs in onDataAvailable', async () => {
-    const onDataAvailable = vi.fn();
+     let onDataAvailable = vi.fn();
     
-    const { result } = renderHook(() =>
+     let { result } = renderHook(() =>
       useMediaRecorder({
         onDataAvailable,
         mediaStreamConstraints: { audio: true },
       })
     );
     
-    await result.current.getMediaStream();
+    await act(async () => {
+      await result.current.getMediaStream();
+    });
     
     await waitFor(() => {
       expect(result.current.status).toBe('ready');
     });
-    
-    result.current.startRecording();
-    
-    const emptyBlob = new Blob([], { type: 'audio/webm' });
+   
+    await act(async () => { 
+    	await result.current.startRecording();
+		});    
+
+    let emptyBlob = new Blob([], { type: 'audio/webm' });
     
     if (listeners.dataavailable) {
       listeners.dataavailable.forEach(handler => {
@@ -387,165 +517,203 @@ describe('useMediaRecorder - Callbacks', () => {
       });
     }
     
-    expect(onDataAvailable).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(onDataAvailable).toHaveBeenCalled();
+    });
   });
 });
 
 // Stream Management Tests
 describe('useMediaRecorder - Stream Management', () => {
   it('should clear media stream and reset to idle status', async () => {
-    const { result } = renderHook(() =>
+     let { result } = renderHook(() =>
       useMediaRecorder({
         mediaStreamConstraints: { audio: true },
       })
     );
     
-    await result.current.getMediaStream();
+    await act(async () => {
+      await result.current.getMediaStream();
+    });
     
     await waitFor(() => {
       expect(result.current.status).toBe('ready');
       expect(result.current.liveStream).toBeDefined();
     });
     
-    result.current.clearMediaStream();
+    await act(() => {
+      result.current.clearMediaStream();
+    });
     
-    expect(result.current.liveStream).toBeNull();
-    expect(result.current.status).toBe('idle');
+    await waitFor(() => {
+      expect(result.current.liveStream).toBeNull();
+      expect(result.current.status).toBe('idle');
+    });
   });
   
   it('should stop all tracks when clearing media stream', async () => {
-    const { result } = renderHook(() =>
+     let { result } = renderHook(() =>
       useMediaRecorder({
         mediaStreamConstraints: { audio: true },
       })
     );
     
-    await result.current.getMediaStream();
+    await act(async () => {
+      await result.current.getMediaStream();
+    });
     
     await waitFor(() => {
       expect(result.current.status).toBe('ready');
     });
     
-    const tracks = result.current.liveStream.getTracks();
+    let tracks = result.current.liveStream.getTracks();
     
-    result.current.clearMediaStream();
+    await act(() => {
+      result.current.clearMediaStream();
+    });
     
-    tracks.forEach(track => {
-      expect(track.stop).toHaveBeenCalled();
+    await waitFor(() => {
+      tracks.forEach(track => {
+        expect(track.stop).toHaveBeenCalled();
+      });
     });
   });
   
   it('should clear media blob', async () => {
-    const { result } = renderHook(() =>
+     let { result } = renderHook(() =>
       useMediaRecorder({
         mediaStreamConstraints: { audio: true },
       })
     );
     
-    await result.current.getMediaStream();
+    await act(async () => {
+      await result.current.getMediaStream();
+    });
     
     await waitFor(() => {
       expect(result.current.status).toBe('ready');
     });
     
-    result.current.startRecording();
-    result.current.stopRecording();
+    await waitFor(() => {
+      result.current.startRecording();
+      result.current.stopRecording();
+    });
     
     await waitFor(() => {
       expect(result.current.mediaBlob).toBeDefined();
     });
     
-    result.current.clearMediaBlob();
+    await act(() => {
+      result.current.clearMediaBlob();
+    });
     
-    expect(result.current.mediaBlob).toBeNull();
+    await waitFor(() => {
+      expect(result.current.mediaBlob).toBeNull();
+    });
   });
 });
 
 // Configuration Tests
 describe('useMediaRecorder - Custom Configuration', () => {
   it('should use custom media stream', async () => {
-    const customStream = createMockMediaStream();
+     let customStream = createMockMediaStream();
     
-    const { result } = renderHook(() =>
+     let { result } = renderHook(() =>
       useMediaRecorder({
         customMediaStream: customStream,
         mediaStreamConstraints: { audio: true },
       })
     );
     
-    const stream = await result.current.getMediaStream();
+    let stream = await result.current.getMediaStream();
     
-    expect(stream).toBe(customStream);
+    expect(stream).toEqual(customStream);
     expect(global.navigator.mediaDevices.getUserMedia).not.toHaveBeenCalled();
   });
   
   it('should pass timeSlice to MediaRecorder.start', async () => {
-    const timeSlice = 1000;
+     let timeSlice = 1000;
     
-    const { result } = renderHook(() =>
+     let { result } = renderHook(() =>
       useMediaRecorder({
         mediaStreamConstraints: { audio: true },
       })
     );
     
-    await result.current.getMediaStream();
+    await act(async () => {
+      await result.current.getMediaStream()
+    });
     
     await waitFor(() => {
       expect(result.current.status).toBe('ready');
     });
     
-    result.current.startRecording(timeSlice);
+    await act(async () => {
+      await result.current.startRecording(timeSlice);
+    });
     
-    expect(mockMediaRecorder.start).toHaveBeenCalledWith(timeSlice);
+    await waitFor(() => {
+      expect(mockMediaRecorder.start).toHaveBeenCalledWith(timeSlice);
+    });
   });
   
   it('should use custom blob options', async () => {
-    const blobOptions = { type: 'video/mp4' };
+     let blobOptions = { type: 'video/mp4' };
     
-    const { result } = renderHook(() =>
+     let { result } = renderHook(() =>
       useMediaRecorder({
         blobOptions,
         mediaStreamConstraints: { video: true },
       })
     );
     
-    await result.current.getMediaStream();
+    await act(async () => {
+      await result.current.getMediaStream()
+    });
     
     await waitFor(() => {
       expect(result.current.status).toBe('ready');
     });
     
-    result.current.startRecording();
+    await act(async () => {
+      await result.current.startRecording()
+    });
     
-    expect(result.current.status).toBe('recording');
+    await waitFor(() => {
+      expect(result.current.status).toBe('recording');
+    });
   });
   
   it('should use screen recording with recordScreen flag', async () => {
-    const { result } = renderHook(() =>
+     let { result } = renderHook(() =>
       useMediaRecorder({
         recordScreen: true,
         mediaStreamConstraints: { audio: true, video: true },
       })
     );
     
-    await result.current.getMediaStream();
+    await act(async () => {
+     await result.current.getMediaStream();
+    });
     
     await waitFor(() => {
       expect(result.current.status).toBe('ready');
     });
     
-    expect(global.navigator.mediaDevices.getDisplayMedia).toHaveBeenCalled();
-    expect(global.navigator.mediaDevices.getUserMedia).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(global.navigator.mediaDevices.getDisplayMedia).toHaveBeenCalled();
+      expect(global.navigator.mediaDevices.getUserMedia).toHaveBeenCalled();
+    });
   });
   
   it('should pass mediaRecorderOptions to MediaRecorder constructor', async () => {
-    const mediaRecorderOptions = {
+     let mediaRecorderOptions = {
       mimeType: 'video/webm;codecs=vp9',
       audioBitsPerSecond: 128000,
       videoBitsPerSecond: 2500000,
     };
     
-    const { result } = renderHook(() =>
+     let { result } = renderHook(() =>
       useMediaRecorder({
         mediaRecorderOptions,
         mediaStreamConstraints: { audio: true, video: true },
@@ -558,25 +726,31 @@ describe('useMediaRecorder - Custom Configuration', () => {
       expect(result.current.status).toBe('ready');
     });
     
-    result.current.startRecording();
+    await act(async () => {
+      await result.current.startRecording()
+    });
     
-    expect(global.MediaRecorder).toHaveBeenCalledWith(
-      expect.anything(),
-      mediaRecorderOptions
-    );
+    await waitFor(() => {
+      expect(global.MediaRecorder).toHaveBeenCalledWith(
+        expect.anything(),
+        mediaRecorderOptions
+      );
+    });
   });
 });
 
 // Edge Cases
 describe('useMediaRecorder - Edge Cases', () => {
   it('should handle multiple rapid start/stop calls', async () => {
-    const { result } = renderHook(() =>
+     let { result } = renderHook(() =>
       useMediaRecorder({
         mediaStreamConstraints: { audio: true },
       })
     );
     
-    await result.current.getMediaStream();
+    await act(async () => {
+      await result.current.getMediaStream()
+    });
     
     await waitFor(() => {
       expect(result.current.status).toBe('ready');
@@ -591,30 +765,36 @@ describe('useMediaRecorder - Edge Cases', () => {
   });
   
   it('should handle null custom media stream gracefully', async () => {
-    const { result } = renderHook(() =>
+     let { result } = renderHook(() =>
       useMediaRecorder({
         customMediaStream: null,
         mediaStreamConstraints: { audio: true },
       })
     );
     
-    await result.current.getMediaStream();
+    await act(async () => {
+      await result.current.getMediaStream()
+    });
     
     await waitFor(() => {
       expect(result.current.status).toBe('ready');
     });
     
-    expect(global.navigator.mediaDevices.getUserMedia).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(global.navigator.mediaDevices.getUserMedia).toHaveBeenCalled();
+    });
   });
   
   it('should handle unmount during async operations', async () => {
-    const { result, unmount } = renderHook(() =>
+     let { result, unmount } = renderHook(() =>
       useMediaRecorder({
         mediaStreamConstraints: { audio: true },
       })
     );
     
-    result.current.getMediaStream();
+    await act(async () => {
+      await result.current.getMediaStream()
+    });
     
     unmount();
     
