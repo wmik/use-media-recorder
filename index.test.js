@@ -47,11 +47,11 @@ beforeEach(() => {
   mockMediaStream = createMockMediaStream();
   listeners = {};
   
-	global.MediaStream = vi.fn().mockImplementation(function() { return mockMediaStream; });
+  global.MediaStream = vi.fn().mockImplementation(function() { return mockMediaStream; });
   global.MediaRecorder = vi.fn().mockImplementation(function (stream, options) {
     let recordState = 'inactive';
 
-     return {
+    return {
       ...mockMediaRecorder,
       stream,
       options,
@@ -115,13 +115,13 @@ afterEach(() => {
 // Error Handling Tests
 describe('useMediaRecorder - Error Handling', () => {
   it('should catch synchronous errors from MediaRecorder.start()', async () => {
-     let onError = vi.fn();
+    let onError = vi.fn();
 
     mockMediaRecorder.start.mockImplementation(() => {
       throw new DOMException('InvalidStateError');
     });
     
-     let { result } = renderHook(() =>
+    let { result } = renderHook(() =>
       useMediaRecorder({
         onError,
         mediaStreamConstraints: { audio: true },
@@ -149,9 +149,9 @@ describe('useMediaRecorder - Error Handling', () => {
   it('should handle getUserMedia rejection', async () => {
     let error = new Error('Permission denied');
     
-		global.navigator.mediaDevices.getUserMedia.mockRejectedValue(error);
+    global.navigator.mediaDevices.getUserMedia.mockRejectedValue(error);
     
-     let { result } = renderHook(() =>
+    let { result } = renderHook(() =>
       useMediaRecorder({
         mediaStreamConstraints: { audio: true },
       })
@@ -169,10 +169,11 @@ describe('useMediaRecorder - Error Handling', () => {
   });
   
   it('should handle getDisplayMedia rejection for screen recording', async () => {
-     let error = new Error('User cancelled');
+    let error = new Error('User cancelled');
+
     global.navigator.mediaDevices.getDisplayMedia.mockRejectedValue(error);
     
-     let { result } = renderHook(() =>
+    let { result } = renderHook(() =>
       useMediaRecorder({
         recordScreen: true,
         mediaStreamConstraints: { audio: true, video: true },
@@ -190,7 +191,7 @@ describe('useMediaRecorder - Error Handling', () => {
   });
   
   it('should handle immediate stopRecording after startRecording', async () => {
-     let { result } = renderHook(() =>
+    let { result } = renderHook(() =>
       useMediaRecorder({
         mediaStreamConstraints: { audio: true },
       })
@@ -218,7 +219,7 @@ describe('useMediaRecorder - Error Handling', () => {
 // State Transition Tests
 describe('useMediaRecorder - State Transitions', () => {
   it('should transition through correct states: idle → acquiring_media → ready', async () => {
-     let { result } = renderHook(() =>
+    let { result } = renderHook(() =>
       useMediaRecorder({
         mediaStreamConstraints: { audio: true },
       })
@@ -239,7 +240,7 @@ describe('useMediaRecorder - State Transitions', () => {
   });
   
   it('should transition through recording lifecycle', async () => {
-     let { result } = renderHook(() =>
+    let { result } = renderHook(() =>
       useMediaRecorder({
         mediaStreamConstraints: { audio: true },
       })
@@ -253,9 +254,9 @@ describe('useMediaRecorder - State Transitions', () => {
       expect(result.current.status).toBe('ready');
     });
     
-		await act(async () => {
-			await result.current.startRecording();
-		});
+    await act(async () => {
+      await result.current.startRecording();
+    });
 
 
     await waitFor(() => {
@@ -266,8 +267,8 @@ describe('useMediaRecorder - State Transitions', () => {
       expect(mockMediaRecorder.start).toHaveBeenCalled();
     });
     
-		await act(async () => {
-			await result.current.pauseRecording();
+    await act(async () => {
+      await result.current.pauseRecording();
     });
 
     await waitFor(() => {
@@ -285,11 +286,11 @@ describe('useMediaRecorder - State Transitions', () => {
       expect(result.current.status).toBe('recording');
     });
 
-		await act(async () => {
-			await result.current.stopRecording();
+    await act(async () => {
+      await result.current.stopRecording();
       // TODO: Test intermediate state
       //expect(result.current.status).toBe('stopping');
-		});
+    });
 
     await waitFor(() => {
       expect(mockMediaRecorder.stop).toHaveBeenCalled();
@@ -299,13 +300,13 @@ describe('useMediaRecorder - State Transitions', () => {
   
   it('should not allow startRecording when already recording', async () => {
      let { result } = renderHook(() =>
-      useMediaRecorder({
-        mediaStreamConstraints: { audio: true },
+       useMediaRecorder({
+         mediaStreamConstraints: { audio: true },
       })
     );
 
     await act(async () => { 
-			await result.current.getMediaStream();
+      await result.current.getMediaStream();
     });
 
     await waitFor(() => {
@@ -313,16 +314,16 @@ describe('useMediaRecorder - State Transitions', () => {
     });
     
     await act(async () => { 
-			await result.current.startRecording();
-		});
+      await result.current.startRecording();
+    });
 
     await waitFor(() => {
       expect(mockMediaRecorder.start).toHaveBeenCalledTimes(1);
     });
     
     await act(async () => { 
-			await result.current.startRecording();
-		});
+      await result.current.startRecording();
+    });
 
     await waitFor(() => {
       expect(mockMediaRecorder.start).toHaveBeenCalledTimes(1);
