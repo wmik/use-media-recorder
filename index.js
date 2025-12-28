@@ -157,7 +157,7 @@ function useMediaRecorder({
   }
 
   async function startRecording(timeSlice) {
-    if(mediaRecorder.current && mediaRecorder.current.state === 'recording') {
+    if(mediaRecorder.current && mediaRecorder.current.state !== 'inactive') {
       console.warn('Attempting to call `startRecording` while state is already `recording`'); 
       return;
     }
