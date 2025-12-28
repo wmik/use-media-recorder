@@ -14,7 +14,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18.x, 20.x, 22.x, 24.x] # Test against multiple Node.js versions
+        node-version: [20.x, 22.x, 24.x] # Test against multiple Node.js versions
         # You can add more versions or specific OS runners as needed
 
     steps:
