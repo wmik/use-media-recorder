@@ -8,11 +8,7 @@ export type Status =
   | 'stopped'
   | 'failed';
 
-export type MediaRecorderOptions = {
-  mimeType?: string;
-  audioBitsPerSecond?: number;
-  videoBitsPerSecond?: number;
-  bitsPerSecond?: number;
+export type ExperimentalMediaRecorderOptions = {
   audioBitrateMode?: 'constant' | 'variable';
   videoKeyFrameIntervalDuration?: number;
   videoKeyFrameIntervalCount?: number;
@@ -26,7 +22,7 @@ export interface MediaRecorderProps {
   onStop?: (blob: Blob) => void;
   onDataAvailable?: (blob: Blob) => void;
   onError?: (e: Error) => void;
-  mediaRecorderOptions?: MediaRecorderOptions;
+  mediaRecorderOptions?: MediaRecorderOptions & ExperimentalMediaRecorderOptions;
   mediaStreamConstraints: MediaStreamConstraints;
 }
 

@@ -4,7 +4,7 @@
   "author": "wmik <contact@wmik.me>",
   "repository": {
     "type": "git",
-    "url": "https://github.com/wmik/use-media-recorder.git"
+    "url": "git+https://github.com/wmik/use-media-recorder.git"
   },
   "main": "index.js",
   "devDependencies": {
