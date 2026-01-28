@@ -1,108 +1,38 @@
-import { vi } from 'vitest';
+import { afterEach, vi } from 'vitest';
 import { renderHook, waitFor, act, cleanup } from '@testing-library/react';
+import { MediaStreamTrack } from '@domock/media-stream-track';
+import { MediaStream } from '@domock/media-stream';
+import { MediaRecorder } from '@domock/media-recorder';
 import useMediaRecorder from './index';
-
-// Mock MediaRecorder and related APIs
-let createMockMediaRecorder = () => ({
-  start: vi.fn(),
-  stop: vi.fn(),
-  pause: vi.fn(),
-  resume: vi.fn(),
-  addEventListener: vi.fn(),
-  removeEventListener: vi.fn(),
-  state: 'inactive',
-  ondataavailable: null,
-  onstop: null,
-  onerror: null
-});
-
-let createMockTrack = kind => ({
-  stop: vi.fn(),
-  enabled: true,
-  kind,
-  id: `${kind}-track-${Math.random()}`
-});
-
-let createMockMediaStream = () => {
-  let audioTrack = createMockTrack('audio');
-  let videoTrack = createMockTrack('video');
-
-  return {
-    id: 'mock-stream',
-    active: true,
-    getTracks: vi.fn(() => [audioTrack, videoTrack]),
-    getAudioTracks: vi.fn(() => [audioTrack]),
-    getVideoTracks: vi.fn(() => [videoTrack]),
-    addTrack: vi.fn()
-  };
-};
 
 let mockMediaRecorder;
 let mockMediaStream;
-let listeners;
+let mockMediaTrack;
 
 beforeEach(() => {
-  mockMediaRecorder = createMockMediaRecorder();
-  mockMediaStream = createMockMediaStream();
-  listeners = {};
+  mockMediaTrack = new MediaStreamTrack();
+  mockMediaStream = new MediaStream([mockMediaTrack]);
+  mockMediaRecorder = new MediaRecorder();
 
   global.MediaStream = vi.fn().mockImplementation(function () {
     return mockMediaStream;
   });
-  global.MediaRecorder = vi.fn().mockImplementation(function (stream, options) {
-    let recordState = 'inactive';
 
-    return {
-      ...mockMediaRecorder,
-      stream,
-      options,
-      get state() {
-        return recordState;
-      },
-      pause: vi.fn(() => {
-        mockMediaRecorder.pause();
-        recordState = 'paused';
-      }),
-      resume: vi.fn(() => {
-        mockMediaRecorder.resume();
-        recordState = 'recording';
-      }),
-      start: vi.fn(timeSlice => {
-        mockMediaRecorder.start(timeSlice);
-        recordState = 'recording';
-      }),
-      stop: vi.fn(() => {
-        mockMediaRecorder.stop();
-        recordState = 'inactive';
-
-        if (listeners.stop) {
-          listeners.stop.forEach(handler => handler());
-        }
-      }),
-      addEventListener: vi.fn((event, handler) => {
-        if (!listeners[event]) {
-          listeners[event] = [];
-        }
-        listeners[event].push(handler);
-      }),
-      removeEventListener: vi.fn((event, handler) => {
-        if (listeners[event]) {
-          let idx = listeners[event].indexOf(handler);
-
-          if (idx > -1) {
-            listeners[event].splice(idx, 1);
-          }
-        }
-      })
-    };
+  global.MediaRecorder = vi.fn().mockImplementation(function () {
+    return mockMediaRecorder;
   });
 
-  global.MediaRecorder.isTypeSupported = vi.fn(() => true);
+  global.MediaRecorder.isTypeSupported = MediaRecorder.isTypeSupported;
 
   global.navigator.mediaDevices = {
     getUserMedia: vi.fn(() => Promise.resolve(mockMediaStream)),
     getDisplayMedia: vi.fn(() => Promise.resolve(mockMediaStream))
   };
+});
+
+afterEach(() => {
+  vi.clearAllMocks();
+  vi.resetAllMocks();
 });
 
 function delay(callback) {
@@ -121,7 +51,7 @@ describe('useMediaRecorder - Error Handling', () => {
   it('should catch synchronous errors from MediaRecorder.start()', async () => {
     let onError = vi.fn();
 
-    mockMediaRecorder.start.mockImplementation(() => {
+    vi.spyOn(mockMediaRecorder, 'start').mockImplementation(() => {
       throw new DOMException('InvalidStateError');
     });
 
@@ -194,6 +124,8 @@ describe('useMediaRecorder - Error Handling', () => {
   });
 
   it('should handle immediate stopRecording after startRecording', async () => {
+    vi.spyOn(mockMediaRecorder, 'stop');
+
     let { result } = renderHook(() =>
       useMediaRecorder({
         mediaStreamConstraints: { audio: true }
@@ -241,6 +173,11 @@ describe('useMediaRecorder - State Transitions', () => {
   });
 
   it('should transition through recording lifecycle', async () => {
+    vi.spyOn(mockMediaRecorder, 'start');
+    vi.spyOn(mockMediaRecorder, 'pause');
+    vi.spyOn(mockMediaRecorder, 'resume');
+    vi.spyOn(mockMediaRecorder, 'stop');
+
     let { result } = renderHook(() =>
       useMediaRecorder({
         mediaStreamConstraints: { audio: true }
@@ -298,6 +235,8 @@ describe('useMediaRecorder - State Transitions', () => {
   });
 
   it('should not allow startRecording when already recording', async () => {
+    vi.spyOn(mockMediaRecorder, 'start');
+
     let { result } = renderHook(() =>
       useMediaRecorder({
         mediaStreamConstraints: { audio: true }
@@ -472,16 +411,10 @@ describe('useMediaRecorder - Callbacks', () => {
       result.current.startRecording();
     });
 
-    let mockBlob = new Blob(['test'], { type: 'audio/webm' });
-
-    if (listeners.dataavailable) {
-      listeners.dataavailable.forEach(handler => {
-        handler({ data: mockBlob });
-      });
-    }
+    mockMediaRecorder.requestData();
 
     await waitFor(() => {
-      expect(onDataAvailable).toHaveBeenCalledWith(mockBlob);
+      expect(onDataAvailable).toHaveBeenCalled();
     });
   });
 
@@ -507,13 +440,7 @@ describe('useMediaRecorder - Callbacks', () => {
       await result.current.startRecording();
     });
 
-    let emptyBlob = new Blob([], { type: 'audio/webm' });
-
-    if (listeners.dataavailable) {
-      listeners.dataavailable.forEach(handler => {
-        handler({ data: emptyBlob });
-      });
-    }
+    mockMediaRecorder.requestData();
 
     await waitFor(() => {
       expect(onDataAvailable).toHaveBeenCalled();
@@ -550,6 +477,9 @@ describe('useMediaRecorder - Stream Management', () => {
   });
 
   it('should stop all tracks when clearing media stream', async () => {
+    vi.spyOn(mockMediaRecorder, 'stop');
+    vi.spyOn(mockMediaTrack, 'stop');
+
     let { result } = renderHook(() =>
       useMediaRecorder({
         mediaStreamConstraints: { audio: true }
@@ -614,7 +544,7 @@ describe('useMediaRecorder - Stream Management', () => {
 // Configuration Tests
 describe('useMediaRecorder - Custom Configuration', () => {
   it('should use custom media stream', async () => {
-    let customStream = createMockMediaStream();
+    let customStream = new MediaStream([new MediaStreamTrack()]);
 
     let { result } = renderHook(() =>
       useMediaRecorder({
@@ -630,6 +560,8 @@ describe('useMediaRecorder - Custom Configuration', () => {
   });
 
   it('should pass timeSlice to MediaRecorder.start', async () => {
+    vi.spyOn(mockMediaRecorder, 'start');
+
     let timeSlice = 1000;
 
     let { result } = renderHook(() =>

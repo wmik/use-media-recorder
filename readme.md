@@ -149,4 +149,4 @@ function LiveStreamPreview({ stream }) {
 - [`react-media-recorder`](https://github.com/0x006F/react-media-recorder)
 
 ## License
-MIT &copy;2020
+MIT &copy;2026
